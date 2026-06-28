@@ -130,31 +130,27 @@ The following modules will be implemented in upcoming prompts:
 - Beneficiary management views
 - API integration with TanStack Query hooks
 
-## Authentication Architecture
+## Dashboard Architecture
 
-The authentication module is designed to be scalable and handles JWT-based authentication.
+The dashboard is built using a configuration-driven composition engine.
 
-### Authentication Flow
-1. User submits credentials on `/login`.
-2. `LoginForm` uses React Hook Form and Zod to validate input.
-3. `useLogin` hook triggers the Axios client to call the backend.
-4. On success, the JWT token is stored securely via `auth.storage.ts`.
-5. `AuthContext` updates with user details and authentication status.
-6. User is redirected to the protected dashboard.
+### Application Shell
+- `DashboardLayout` provides the responsive sidebar, header, and main content area.
+- `DashboardSidebar` manages navigation.
+- `DashboardHeader` integrates global actions like the user menu.
 
-### Session Restoration
-When the application starts or refreshes:
-1. `SessionProvider` checks for an existing JWT token in `auth.storage.ts`.
-2. If found, a request is made to `/api/auth/me` to fetch user details.
-3. During this process, a `SessionLoading` state is displayed to keep the application responsive.
-4. If the token is invalid or expired, the session is cleared automatically.
+### Widget System
+- The dashboard does not use hardcoded JSX for metrics.
+- `DashboardWidget` acts as the base container providing borders, padding, and skeleton states.
+- Reusable components like `KpiCard`, `ChartCard`, and `MapCard` ensure uniform appearance.
+- `EmptyState` and `ErrorState` are standard across all widgets.
 
-### Protected Routes
-- `AuthGuard` is a component that wraps protected content. It checks the `isAuthenticated` state from the session. If the user is unauthenticated, they are redirected to `/login`.
-- `ProtectedLayout` implements the standard authenticated dashboard layout.
+### Grid System
+- `ResponsiveGrid` automatically manages columns for desktop, tablet, and mobile displays without requiring fixed widths.
 
-### Axios Interceptors
-All authenticated requests automatically include the `Authorization` header via Axios request interceptors. Response interceptors handle `401 Unauthorized` and `403 Forbidden` errors by clearing invalid sessions and dispatching a custom event (`auth:unauthorized`) to redirect users to `/login`.
+### Dashboard Configuration
+- The entire dashboard layout is managed via `config/dashboard.config.ts`.
+- Future prompts only need to update this configuration array to render new charts, KPIs, or maps dynamically.
 
 ## License
 

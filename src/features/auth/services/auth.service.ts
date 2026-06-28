@@ -1,7 +1,11 @@
 import apiClient from '@/services/api/api';
 import { ApiResponse, User } from '@/types';
 
-import { AuthResponse, LoginCredentials } from '../types/auth.types';
+import {
+  AuthResponse,
+  LoginCredentials,
+  RegisterCredentials,
+} from '../types/auth.types';
 
 export const authService = {
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
@@ -9,6 +13,15 @@ export const authService = {
       '/api/auth/login',
       credentials,
     );
+    return data.data;
+  },
+
+  register: async (
+    credentials: RegisterCredentials,
+  ): Promise<{ id: string; name: string; email: string }> => {
+    const { data } = await apiClient.post<
+      ApiResponse<{ id: string; name: string; email: string }>
+    >('/api/auth/register', credentials);
     return data.data;
   },
 

@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
-import { useForm as useRHForm } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -22,41 +22,63 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 
-import { useLogin } from '../hooks/useLogin';
-import { loginSchema, LoginFormData } from '../schemas/login.schema';
+import { useRegister } from '../hooks/useRegister';
+import { registerSchema, RegisterFormData } from '../schemas/register.schema';
 
-export const LoginForm = () => {
-  const { login, isLoading, error } = useLogin();
+export const RegisterForm = () => {
+  const { register, isLoading, error } = useRegister();
 
-  const form = useRHForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
+  const form = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
     defaultValues: {
+      name: '',
       email: '',
       password: '',
+      confirmPassword: '',
     },
   });
 
-  const onSubmit = async (data: LoginFormData) => {
-    await login(data);
+  const onSubmit = async (data: RegisterFormData) => {
+    try {
+      await register({
+        name: data.name,
+        email: data.email,
+        password: data.password,
+      });
+    } catch {
+      // Ignore
+    }
   };
 
   return (
     <Card className="mx-auto w-full max-w-md">
       <CardHeader className="space-y-1 text-center">
         <div className="mb-4 flex justify-center">
-          {/* Logo Placeholder */}
           <div className="bg-primary text-primary-foreground flex h-12 w-12 items-center justify-center rounded-md text-xl font-bold">
             EC
           </div>
         </div>
-        <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
+        <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
         <CardDescription>
-          Enter your credentials to access your account
+          Enter your details below to create your account
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="John Doe" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="email"
@@ -75,17 +97,20 @@ export const LoginForm = () => {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <div className="flex items-center justify-between">
-                    <FormLabel>Password</FormLabel>
-                    {/* Forgot password placeholder */}
-                    <a
-                      href="#"
-                      className="text-primary text-sm hover:underline"
-                      tabIndex={-1}
-                    >
-                      Forgot password?
-                    </a>
-                  </div>
+                  <FormLabel>Password</FormLabel>
+                  <FormControl>
+                    <Input type="password" placeholder="••••••••" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="confirmPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Confirm Password</FormLabel>
                   <FormControl>
                     <Input type="password" placeholder="••••••••" {...field} />
                   </FormControl>
@@ -104,17 +129,17 @@ export const LoginForm = () => {
               {isLoading ? (
                 <div className="flex items-center gap-2">
                   <div className="border-background h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"></div>
-                  Signing in...
+                  Creating account...
                 </div>
               ) : (
-                'Sign In'
+                'Sign Up'
               )}
             </Button>
 
             <div className="text-muted-foreground mt-4 text-center text-sm">
-              Don&apos;t have an account?{' '}
-              <Link href="/register" className="text-primary hover:underline">
-                Sign Up
+              Already have an account?{' '}
+              <Link href="/login" className="text-primary hover:underline">
+                Sign In
               </Link>
             </div>
           </form>

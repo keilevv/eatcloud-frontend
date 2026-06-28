@@ -1,5 +1,3 @@
-import React from 'react';
-
 export const SessionLoading = () => {
   return (
     <div className="bg-background flex h-screen w-screen items-center justify-center">

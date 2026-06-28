@@ -4,10 +4,10 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 import { SessionLoading } from '@/features/auth/components/Loading';
-import { LoginForm } from '@/features/auth/components/LoginForm';
+import { RegisterForm } from '@/features/auth/components/RegisterForm';
 import { useSession } from '@/features/auth/hooks/useSession';
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const { isAuthenticated, isLoading } = useSession();
   const router = useRouter();
 
@@ -24,7 +24,7 @@ export default function LoginPage() {
   return (
     <div className="bg-muted/40 flex min-h-screen w-full items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <LoginForm />
+        <RegisterForm />
       </div>
     </div>
   );
