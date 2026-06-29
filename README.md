@@ -152,6 +152,30 @@ The dashboard is built using a configuration-driven composition engine.
 - The entire dashboard layout is managed via `config/dashboard.config.ts`.
 - Future prompts only need to update this configuration array to render new charts, KPIs, or maps dynamically.
 
+## Chart Architecture
+
+The dashboard implements a highly reusable charting infrastructure using Victory, separated into layers:
+
+1. **DTOs & Adapters**: `DonorChartAdapter`, `DonationPointAdapter`, etc. transform raw backend responses into a standard `ChartSeries` and `ChartPoint` dataset without mutating business logic.
+2. **Configuration & Utils**: Chart configurations (`ChartConfig`), theming (`chartTheme.ts`, `victoryTheme.ts`), and formatters (`formatAxis`, `formatTooltip`) dictate aesthetics and labels uniformly across charts.
+3. **Generic Wrappers**: `VictoryBarWrapper`, `VictoryScatterWrapper`, and `VictoryChartWrapper` handle all the proprietary Victory configurations securely.
+4. **Presentation Components**: `BarChart`, `HorizontalBarChart`, `ScatterChart`, and `ChartContainer` assemble the layouts alongside loading, empty, and error states.
+
+This ensures that UI logic is thoroughly abstracted, providing deep code reuse—especially ideal for porting configurations and formatters to the future React Native app.
+
+### Chart Folder Structure
+```text
+src/features/dashboard/charts/
+├── adapters/      # Data transformers (DTO -> ChartSeries)
+├── components/    # Reusable chart components & states
+├── config/        # Margins, typography, theme tokens
+├── hooks/         # Responsive layout utilities
+├── styles/        # Victory theme definitions
+├── types/         # Core interfaces
+├── utils/         # Axes, tooltip formatting & sorting
+└── wrappers/      # Victory base abstraction layer
+```
+
 ## License
 
 Private

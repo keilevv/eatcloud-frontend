@@ -10,7 +10,7 @@ import {
 export const authService = {
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
     const { data } = await apiClient.post<ApiResponse<AuthResponse>>(
-      '/api/auth/login',
+      '/auth/login',
       credentials,
     );
     return data.data;
@@ -21,7 +21,7 @@ export const authService = {
   ): Promise<{ id: string; name: string; email: string }> => {
     const { data } = await apiClient.post<
       ApiResponse<{ id: string; name: string; email: string }>
-    >('/api/auth/register', credentials);
+    >('/auth/register', credentials);
     return data.data;
   },
 
@@ -34,7 +34,7 @@ export const authService = {
 
   getCurrentUser: async (): Promise<User> => {
     const { data } =
-      await apiClient.get<ApiResponse<{ user: User }>>('/api/auth/me');
+      await apiClient.get<ApiResponse<{ user: User }>>('/auth/me');
     const responseData = data.data as unknown as { user?: User };
     return responseData.user || (data.data as unknown as User);
   },
