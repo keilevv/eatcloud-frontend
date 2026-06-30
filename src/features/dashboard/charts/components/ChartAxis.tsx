@@ -9,11 +9,13 @@ interface ChartAxisProps {
   dependentAxis?: boolean;
   config?: ChartConfig;
   horizontal?: boolean;
+  [key: string]: any; // Allow Victory injected props
 }
 
 export const ChartAxis: React.FC<ChartAxisProps> = ({
   dependentAxis,
   config,
+  ...props
 }) => {
   // When horizontal=true, the dependentAxis (Y values) is actually drawn on the X axis physically
   // and the independentAxis (X labels) is drawn on the Y axis physically.
@@ -22,8 +24,12 @@ export const ChartAxis: React.FC<ChartAxisProps> = ({
 
   return (
     <VictoryAxis
+      {...props}
       dependentAxis={dependentAxis}
       tickFormat={(t) => {
+        if (props.tickFormat) {
+          return props.tickFormat(t);
+        }
         if (dependentAxis) {
           return formatAxis(t, format);
         }
@@ -33,7 +39,11 @@ export const ChartAxis: React.FC<ChartAxisProps> = ({
       style={{
         tickLabels: { padding: 5 },
         axisLabel: { padding: 40 },
+        ...props.style,
       }}
     />
   );
 };
+
+// Required for VictoryChart to recognize this as an axis and pass down scale/domain
+Object.assign(ChartAxis, VictoryAxis);

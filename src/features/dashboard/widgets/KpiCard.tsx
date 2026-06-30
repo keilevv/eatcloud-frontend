@@ -3,7 +3,7 @@ import React from 'react';
 import { DashboardWidget } from './DashboardWidget';
 
 interface KpiCardProps {
-  title: string;
+  title: string | React.ReactNode;
   value: string | number;
   subtitle?: string;
   trend?: {

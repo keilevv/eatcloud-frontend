@@ -10,7 +10,7 @@ export const formatDate = (value: string | Date, pattern = 'PPP'): string => {
   return format(date, pattern);
 };
 
-export const formatNumber = (value: number, locale = 'en-US'): string => {
+export const formatNumber = (value: number, locale = 'es-CO'): string => {
   return new Intl.NumberFormat(locale).format(value);
 };
 

@@ -29,19 +29,19 @@ export const dashboardConfig = [
         value: 'Loading...',
       },
       {
-        id: 'chart-1',
+        id: 'chart-5',
         type: 'bar',
         title: 'Donantes: Cantidad vs Total KG',
         value: 'Loading...',
         className: 'col',
       },
-      {
-        id: 'chart-2',
-        type: 'horizontalBar',
-        title: 'Donantes: Cantidad vs Total KG',
-        value: 'Loading...',
-        className: 'col',
-      },
+      // {
+      //   id: 'chart-2',
+      //   type: 'horizontalBar',
+      //   title: 'Donantes: Cantidad vs Total KG',
+      //   value: 'Loading...',
+      //   className: 'col',
+      // },
     ],
   },
   // {

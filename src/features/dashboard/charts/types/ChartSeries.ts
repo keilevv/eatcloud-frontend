@@ -5,4 +5,5 @@ export interface ChartSeries<T = unknown> {
   name: string;
   data: ChartPoint<T>[];
   color?: string;
+  type?: 'bar' | 'line';
 }

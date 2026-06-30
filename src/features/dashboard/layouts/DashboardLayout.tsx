@@ -15,7 +15,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       <div className="flex flex-1 flex-col overflow-hidden">
         <DashboardHeader />
         <main className="bg-muted/20 flex-1 overflow-auto">{children}</main>
-        <DashboardFooter />
+        {/* <DashboardFooter /> */}
       </div>
     </div>
   );

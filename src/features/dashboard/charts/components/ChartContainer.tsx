@@ -15,6 +15,7 @@ interface ChartContainerProps {
   emptyMessage?: string;
   children: (props: { width: number; height: number }) => React.ReactNode;
   height?: number | string;
+  minWidth?: number;
 }
 
 export const ChartContainer: React.FC<ChartContainerProps> = ({
@@ -26,6 +27,7 @@ export const ChartContainer: React.FC<ChartContainerProps> = ({
   emptyMessage,
   children,
   height = 400,
+  minWidth,
 }) => {
   const { ref, dimensions } = useChartDimensions();
 
@@ -58,8 +60,19 @@ export const ChartContainer: React.FC<ChartContainerProps> = ({
           !empty &&
           dimensions.width > 0 &&
           dimensions.height > 0 && (
-            <div className="absolute inset-0">
-              {children({ width: dimensions.width, height: dimensions.height })}
+            <div className="absolute inset-0 overflow-x-auto overflow-y-hidden">
+              <div
+                style={{
+                  minWidth: minWidth ? `${minWidth}px` : '100%',
+                  width: '100%',
+                  height: '100%',
+                }}
+              >
+                {children({
+                  width: Math.max(dimensions.width, minWidth || 0),
+                  height: dimensions.height,
+                })}
+              </div>
             </div>
           )}
       </div>

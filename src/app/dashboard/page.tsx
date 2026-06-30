@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-
 import { ProtectedLayout } from '@/features/auth/components/ProtectedLayout';
 import { DonationPointAdapter } from '@/features/dashboard/charts/adapters/DonationPointAdapter';
 import { DonorChartAdapter } from '@/features/dashboard/charts/adapters/DonorChartAdapter';
@@ -22,20 +21,23 @@ import { DashboardGrid } from '@/features/dashboard/widgets/DashboardGrid';
 import { DashboardSection } from '@/features/dashboard/widgets/DashboardSection';
 import { KpiCard } from '@/features/dashboard/widgets/KpiCard';
 import { MapCard } from '@/features/dashboard/widgets/MapCard';
+import { formatNumber } from '@/utils';
 
 export default function DashboardPage() {
   const [filters] = useState<DashboardFilters>({});
   const { data, isLoading, error } = useDashboard(filters);
 
-  const donorDataset = data?.cancellationAnalysis?.donors
+  const donorDataset = data?.cancellationAnalysis?.donorsChart
     ? DonorChartAdapter(
-        data.cancellationAnalysis.donors.map((d: Record<string, unknown>) => ({
+        data.cancellationAnalysis.donorsChart.map((d: Record<string, unknown>) => ({
           id: d.donor as string,
           name: d.donor as string,
           totalKg: d.totalKg as number,
-        })),
+          quantity: d.quantity as number,
+        })).slice(0, 15),
       )
     : [];
+   
   const donationPointDataset = data?.cancellationAnalysis?.donationPoints
     ? DonationPointAdapter(
         data.cancellationAnalysis.donationPoints.map(
@@ -86,16 +88,16 @@ export default function DashboardPage() {
     if (!data?.cancellationAnalysis?.kpis) return 'Loading...';
     switch (id) {
       case 'kpi-1':
-        return data.cancellationAnalysis.kpis.totalCancelled.toString();
+        return formatNumber(data.cancellationAnalysis.kpis.totalCancelled);
       case 'kpi-2':
-        return data.cancellationAnalysis.kpis.totalKgCancelled.toFixed(2);
+        return formatNumber(data.cancellationAnalysis.kpis.totalKgCancelled);
       case 'kpi-3':
         return (
           data.cancellationAnalysis.kpis.cancellationProbability.toFixed(2) +
           '%'
         );
       case 'kpi-4':
-        return data.cancellationAnalysis.kpis.totalGeneral.toString();
+        return formatNumber(data.cancellationAnalysis.kpis.totalGeneral);
       default:
         return '';
     }
@@ -146,6 +148,7 @@ export default function DashboardPage() {
                         config={typedWidget.config as ChartConfig}
                         loading={isLoading}
                         error={!!error}
+                        minWidth={500}
                       />
                     </ChartCard>
                   );

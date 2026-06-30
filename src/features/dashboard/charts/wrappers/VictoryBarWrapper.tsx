@@ -1,5 +1,5 @@
 import React from 'react';
-import { VictoryBar } from 'victory';
+import { VictoryBar, VictoryGroup } from 'victory';
 
 import { ChartTooltip } from '../components/ChartTooltip';
 import { chartThemeConfig } from '../config/chartTheme';
@@ -10,15 +10,18 @@ interface VictoryBarWrapperProps {
   dataset: ChartSeries[];
   horizontal?: boolean;
   config?: ChartConfig;
+  [key: string]: any; // Allow Victory injected props
 }
 
 export const VictoryBarWrapper: React.FC<VictoryBarWrapperProps> = ({
   dataset,
   horizontal,
   config,
+  ...props
 }) => {
+  
   return (
-    <>
+    <VictoryGroup offset={horizontal ? 15 : 20} horizontal={horizontal} {...props}>
       {dataset.map((series, index) => {
         const color =
           series.color ||
@@ -28,7 +31,6 @@ export const VictoryBarWrapper: React.FC<VictoryBarWrapperProps> = ({
           <VictoryBar
             key={series.id}
             data={series.data}
-            horizontal={horizontal}
             style={{
               data: { fill: color },
             }}
@@ -41,6 +43,9 @@ export const VictoryBarWrapper: React.FC<VictoryBarWrapperProps> = ({
           />
         );
       })}
-    </>
+    </VictoryGroup>
   );
 };
+
+// Required for VictoryChart to recognize this as a group and pass down scales
+Object.assign(VictoryBarWrapper, VictoryGroup);

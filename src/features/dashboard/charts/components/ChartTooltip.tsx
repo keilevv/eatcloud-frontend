@@ -31,3 +31,5 @@ export const ChartTooltip: React.FC<ChartTooltipProps> = ({ config }) => {
     />
   );
 };
+
+Object.assign(ChartTooltip, VictoryTooltip);

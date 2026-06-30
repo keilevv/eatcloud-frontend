@@ -7,9 +7,10 @@ import { ChartSeries } from '../types/ChartSeries';
 interface ChartLegendProps {
   dataset: ChartSeries[];
   width?: number;
+  [key: string]: any;
 }
 
-export const ChartLegend: React.FC<ChartLegendProps> = ({ dataset }) => {
+export const ChartLegend: React.FC<ChartLegendProps> = ({ dataset, width, ...props }) => {
   if (dataset.length <= 1) return null;
 
   const legendData = dataset.map((series, index) => ({
@@ -23,7 +24,8 @@ export const ChartLegend: React.FC<ChartLegendProps> = ({ dataset }) => {
 
   return (
     <VictoryLegend
-      x={20}
+      {...props}
+      x={(width || 600) / 2 - 150} // Approximate center
       y={10}
       centerTitle
       orientation="horizontal"
@@ -32,3 +34,5 @@ export const ChartLegend: React.FC<ChartLegendProps> = ({ dataset }) => {
     />
   );
 };
+
+Object.assign(ChartLegend, VictoryLegend);

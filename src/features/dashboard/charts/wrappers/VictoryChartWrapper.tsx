@@ -11,6 +11,8 @@ interface VictoryChartWrapperProps {
   horizontal?: boolean;
   domainPadding?:
     number | { x?: number | [number, number]; y?: number | [number, number] };
+  padding?: { top?: number; bottom?: number; left?: number; right?: number };
+  minWidth?: number;
 }
 
 export const VictoryChartWrapper: React.FC<VictoryChartWrapperProps> = ({
@@ -19,13 +21,18 @@ export const VictoryChartWrapper: React.FC<VictoryChartWrapperProps> = ({
   height,
   horizontal,
   domainPadding = 20,
+  padding: customPadding,
+  minWidth,
 }) => {
-  const padding = horizontal ? chartMargins.horizontalBar : chartMargins.base;
+  const defaultPadding = horizontal ? chartMargins.horizontalBar : chartMargins.base;
+  const padding = customPadding ? { ...defaultPadding, ...customPadding } : defaultPadding;
+
+  const finalWidth = minWidth ? Math.max(width, minWidth) : width;
 
   return (
     <VictoryChart
       theme={victoryTheme}
-      width={width}
+      width={finalWidth}
       height={height}
       padding={padding}
       domainPadding={domainPadding}
