@@ -124,6 +124,12 @@ export default function DashboardPage() {
         );
       case 'kpi-4':
         return formatNumber(data.cancellationAnalysis.kpis.totalGeneral);
+      case 'kpi-5':
+        return data.predictiveAnalysis?.highestRiskPoint?.donationPoint || 'Loading...';
+      case 'kpi-6':
+        return data.predictiveAnalysis?.highestRiskDonor?.donor || 'Loading...';
+      case 'kpi-7':
+        return formatNumber(data.predictiveAnalysis?.excellentPoints|| 0);
       default:
         return '';
     }

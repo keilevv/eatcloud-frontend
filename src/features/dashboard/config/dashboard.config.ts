@@ -88,4 +88,38 @@ export const dashboardConfig = [
       }
     ],
   },
+  {
+    id: 'predictive-analysis',
+    title: 'Análisis Predictivo de Riesgo',
+    description: 'Probabilidad histórica de cancelación por Punto y por Donante',
+    widgets: [
+      {
+        itemSpacing: 4,
+        rowSpacing: 6,
+        items: [
+          {
+            id: 'kpi-5',
+            type: 'kpi',
+            title: 'Punto de Mayor Riesgo',
+            subtitle: '100.00% Probabilidad (all)',
+            textColor: 'text-red-500',
+          },
+          {
+            id: 'kpi-6',
+            type: 'kpi',
+            title: 'Donante de Mayor Riesgo',
+            subtitle: '100.00% Probabilidad',
+            textColor: 'text-amber-500',
+          },
+          {
+            id: 'kpi-7',
+            type: 'kpi',
+            title: 'Puntos Excelentes (0% Riesgo)',
+            subtitle: 'Con el volumen exigido y 0 cancelaciones',
+            textColor: 'text-green-500',
+          }
+        ],
+      },
+    ],
+  },
 ];
