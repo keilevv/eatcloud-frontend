@@ -1,14 +1,68 @@
 import React from 'react';
-import { VictoryLine, VictoryBar, VictoryAxis, VictoryLegend, VictoryTooltip } from 'victory';
+import { VictoryLegend } from 'victory';
 
 import { ChartProps } from '../types/ChartProps';
+import { ChartSeries } from '../types/ChartSeries';
+import { chartThemeConfig } from '../config/chartTheme';
 import { VictoryChartWrapper } from '../wrappers/VictoryChartWrapper';
 
+import { renderBarChartAxes } from './BarChartAxes';
+import { renderBarChartSeries } from './BarChartSeries';
 import { ChartContainer } from './ChartContainer';
-import { chartThemeConfig } from '../config/chartTheme';
-import { formatAxis } from '../utils/formatAxis';
-import { formatLabels } from '../utils/formatLabels';
-import { formatTooltip } from '../utils/formatTooltip';
+
+// Hide X-axis tick labels when the chart is narrower than this threshold
+const X_LABEL_HIDE_THRESHOLD = 450;
+
+/** Compute a clean step size so we get ~5-6 round ticks on the right axis */
+function niceStep(maxVal: number): number {
+  const rough = maxVal / 5;
+  const magnitude = Math.pow(10, Math.floor(Math.log10(rough)));
+  const normalized = rough / magnitude;
+  const nice =
+    normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+  return nice * magnitude;
+}
+
+/** Build up to 7 evenly spaced ticks that are multiples of a nice step */
+function niceTicks(maxVal: number): number[] {
+  const step = niceStep(maxVal);
+  const ticks: number[] = [];
+  for (let v = 0; v <= maxVal + step; v += step) {
+    ticks.push(v);
+    if (ticks.length >= 7) break;
+  }
+  return ticks;
+}
+
+/** Normalize a dual-axis dataset so both bar and line share the same Y scale */
+function normalizeDualAxis(dataset: ChartSeries[]): {
+  normalizedDataset: ChartSeries[];
+  lineScaleRatio: number;
+  rightAxisTicks: number[];
+} {
+  const barSeries = dataset.find((s) => s.type === 'bar')!;
+  const lineSeries = dataset.find((s) => s.type === 'line')!;
+
+  const maxBar = Math.max(...barSeries.data.map((d) => Number(d.y)), 1);
+  const maxLine = Math.max(...lineSeries.data.map((d) => Number(d.y)), 1);
+  const lineScaleRatio = maxLine / maxBar;
+
+  const normalizedDataset = dataset.map((series) => {
+    if (series.type !== 'line') return series;
+    return {
+      ...series,
+      data: series.data.map((d) => ({
+        ...d,
+        y: Number(d.y) / lineScaleRatio,
+      })),
+    };
+  });
+
+  // Build right axis ticks in original KG space → convert to normalized scale
+  const rightAxisTicks = niceTicks(maxLine).map((v) => v / lineScaleRatio);
+
+  return { normalizedDataset, lineScaleRatio, rightAxisTicks };
+}
 
 export const BarChart: React.FC<ChartProps> = ({
   title,
@@ -27,66 +81,26 @@ export const BarChart: React.FC<ChartProps> = ({
     dataset.every((s) => s.data.length === 0);
 
   const isDualAxis =
-    dataset &&
+    !!dataset &&
     dataset.length === 2 &&
     dataset.some((s) => s.type === 'bar') &&
     dataset.some((s) => s.type === 'line');
 
-  const defaultMinWidth = dataset && dataset[0]?.data.length > 10 ? 800 : undefined;
+  const defaultMinWidth =
+    dataset && dataset[0]?.data.length > 10 ? 800 : undefined;
   const finalMinWidth = minWidth || defaultMinWidth;
 
-  let normalizedDataset = dataset;
-  let lineScaleRatio = 1;
-
-  if (isDualAxis && !isEmpty) {
-    const barSeries = dataset.find((s) => s.type === 'bar')!;
-    const lineSeries = dataset.find((s) => s.type === 'line')!;
-
-    const maxBar = Math.max(...barSeries.data.map((d) => Number(d.y)), 1);
-    const maxLine = Math.max(...lineSeries.data.map((d) => Number(d.y)), 1);
-
-    lineScaleRatio = maxLine / maxBar;
-
-    normalizedDataset = dataset.map((series) => {
-      if (series.type === 'line') {
-        return {
-          ...series,
-          data: series.data.map((d) => ({
-            ...d,
-            y: Number(d.y) / (lineScaleRatio || 1),
-          })),
-        };
-      }
-      return series;
-    });
-  }
-
-  const tooltipComponent = (
-    <VictoryTooltip
-      flyoutPadding={10}
-      cornerRadius={4}
-      flyoutStyle={{
-        fill: '#0f172a',
-        stroke: 'none',
-        opacity: 0.9,
-      }}
-      style={{
-        fill: '#f8fafc',
-        fontSize: chartThemeConfig.typography.fontSize,
-        fontFamily: chartThemeConfig.typography.fontFamily,
-      }}
-      text={({ datum }) => {
-        const xVal = typeof datum.xName !== 'undefined' ? datum.xName : datum.x;
-        return formatTooltip(xVal, datum.y, config?.tooltipFormat);
-      }}
-    />
-  );
+  // Normalize dataset for dual-axis rendering
+  const { normalizedDataset, lineScaleRatio, rightAxisTicks } =
+    isDualAxis && !isEmpty
+      ? normalizeDualAxis(dataset)
+      : { normalizedDataset: dataset ?? [], lineScaleRatio: 1, rightAxisTicks: [] };
 
   const chartPadding = {
     top: 40,
-    bottom: 100, // Increase to fit angled X-axis labels
+    bottom: 100,
     left: 60,
-    right: isDualAxis ? 50 : 30, // Increase right margin if dual axis to fit right Y-axis labels
+    right: isDualAxis ? 55 : 30,
   };
 
   return (
@@ -101,29 +115,40 @@ export const BarChart: React.FC<ChartProps> = ({
       minWidth={finalMinWidth}
     >
       {({ width, height }) => {
-        const legendData = dataset ? dataset.map((series, index) => ({
-          name: series.name,
-          symbol: {
-            fill:
-              series.color ||
-              chartThemeConfig.colors[index % chartThemeConfig.colors.length],
-          },
-        })) : [];
+        const effectiveWidth = finalMinWidth
+          ? Math.max(width, finalMinWidth)
+          : width;
+        const hideXLabels = effectiveWidth < X_LABEL_HIDE_THRESHOLD;
 
-        const finalWidth = finalMinWidth ? Math.max(width, finalMinWidth) : width;
+        const legendData = dataset
+          ? dataset.map((series, index) => ({
+              name: series.name,
+              symbol: {
+                fill:
+                  series.color ??
+                  chartThemeConfig.colors[
+                    index % chartThemeConfig.colors.length
+                  ],
+              },
+            }))
+          : [];
 
         return (
           <VictoryChartWrapper
             width={width}
             height={height}
             domainPadding={{ x: 20, y: 20 }}
-            padding={chartPadding}
+            padding={{
+              ...chartPadding,
+              bottom: hideXLabels ? 50 : chartPadding.bottom,
+            }}
             minWidth={finalMinWidth}
           >
+            {/* Legend */}
             {config?.showLegend !== false && dataset && dataset.length > 1 && (
               <VictoryLegend
-                x={finalWidth / 2 - 120}
-                  y={10}
+                x={effectiveWidth / 2 - 120}
+                y={10}
                 centerTitle
                 orientation="horizontal"
                 gutter={20}
@@ -131,82 +156,20 @@ export const BarChart: React.FC<ChartProps> = ({
               />
             )}
 
-            {/* X Axis */}
-            <VictoryAxis
-              tickFormat={(t) => formatLabels(String(t))}
-              label={config?.xAxisLabel}
-              style={{
-                tickLabels: { angle: -45, textAnchor: 'end', padding: 15, fontSize: 16 },
-                axisLabel: { padding: 40 },
-              }}
-            />
+            {/* Axes */}
+            {renderBarChartAxes({
+              config,
+              hideXLabels,
+              isDualAxis,
+              lineScaleRatio,
+              rightAxisTicks,
+            })}
 
-            {/* Left Y Axis */}
-            <VictoryAxis
-              dependentAxis
-              orientation="left"
-              tickFormat={(t) => formatAxis(t, config?.yAxisFormat)}
-              label={config?.yAxisLabel}
-              style={{
-                tickLabels: { fontSize: 12 },
-                axisLabel: { padding: 40 },
-                
-              }}
-            />
-            
-            {/* Right Y Axis */}
-            {isDualAxis && (
-              <VictoryAxis
-                dependentAxis
-                orientation="right"
-                tickFormat={(t: any) =>
-                  formatAxis(Number(t) * lineScaleRatio, config?.yAxisFormat)
-                }
-                style={{
-                  tickLabels: { fill: '#9ca3af',  fontSize: 12 },
-                }}
-              />
-            )}
-
-            {normalizedDataset.map((series, index) => {
-              const color =
-                series.color ||
-                chartThemeConfig.colors[index % chartThemeConfig.colors.length];
-
-              if (series.type === 'line') {
-                return (
-                  <VictoryLine
-                    key={series.id}
-                    data={series.data}
-                    style={{
-                      data: { stroke: color, strokeWidth: 3 },
-                    }}
-                    labelComponent={tooltipComponent}
-                    labels={() => ''}
-                    animate={{
-                      duration: 500,
-                      onLoad: { duration: 500 },
-                    }}
-                  />
-                );
-              }
-
-              return (
-                <VictoryBar
-                  key={series.id}
-                  data={series.data}
-                  style={{
-                    data: { fill: color },
-                  }}
-                  
-                  labelComponent={tooltipComponent}
-                  labels={() => ''}
-                  animate={{
-                    duration: 500,
-                    onLoad: { duration: 500 },
-                  }}
-                />
-              );
+            {/* Series (bars, lines, scatter overlays) */}
+            {renderBarChartSeries({
+              normalizedDataset,
+              lineScaleRatio,
+              tooltipFormat: config?.tooltipFormat,
             })}
           </VictoryChartWrapper>
         );

@@ -1,7 +1,7 @@
 import React from 'react';
 import { VictoryScatter } from 'victory';
 
-import { ChartTooltip } from '../components/ChartTooltip';
+import { createChartTooltip } from '../components/ChartTooltip';
 import { chartThemeConfig } from '../config/chartTheme';
 import { ChartConfig } from '../types/ChartConfig';
 import { ChartSeries } from '../types/ChartSeries';
@@ -30,7 +30,7 @@ export const VictoryScatterWrapper: React.FC<VictoryScatterWrapperProps> = ({
             style={{
               data: { fill: color },
             }}
-            labelComponent={<ChartTooltip config={config} />}
+            labelComponent={createChartTooltip({ tooltipFormat: config?.tooltipFormat })}
             labels={() => ''}
             animate={{
               duration: 500,

@@ -13,6 +13,7 @@ import { ScatterChart } from '@/features/dashboard/charts/components/ScatterChar
 import { ChartConfig } from '@/features/dashboard/charts/types/ChartConfig';
 import { dashboardConfig } from '@/features/dashboard/config/dashboard.config';
 import { useDashboard } from '@/features/dashboard/hooks/useDashboard';
+import { useWindowWidth } from '@/features/dashboard/hooks/useWindowWidth';
 import { DashboardContent } from '@/features/dashboard/layouts/DashboardContent';
 import { DashboardLayout } from '@/features/dashboard/layouts/DashboardLayout';
 import { DashboardFilters } from '@/features/dashboard/services/dashboard.service';
@@ -26,29 +27,39 @@ import { formatNumber } from '@/utils';
 export default function DashboardPage() {
   const [filters] = useState<DashboardFilters>({});
   const { data, isLoading, error } = useDashboard(filters);
+  const windowWidth = useWindowWidth();
+
+  // Charts collapse to 1 column below this pixel width (between sm=640 and md=768)
+  const CHART_SINGLE_COL_BREAKPOINT = 1000;
 
   const donorDataset = data?.cancellationAnalysis?.donorsChart
     ? DonorChartAdapter(
-        data.cancellationAnalysis.donorsChart.map((d: Record<string, unknown>) => ({
-          id: d.donor as string,
-          name: d.donor as string,
-          totalKg: d.totalKg as number,
-          quantity: d.quantity as number,
-        })).slice(0, 15),
+        data.cancellationAnalysis.donorsChart
+          .map((d: Record<string, unknown>) => ({
+            id: d.donor as string,
+            name: d.donor as string,
+            totalKg: d.totalKg as number,
+            quantity: d.quantity as number,
+          }))
+          .slice(0, 15),
       )
     : [];
-   
-  const donationPointDataset = data?.cancellationAnalysis?.donationPoints
+
+  const topDonationPointDataset = data?.cancellationAnalysis?.topDonationPoints
     ? DonationPointAdapter(
-        data.cancellationAnalysis.donationPoints.map(
-          (dp: Record<string, unknown>) => ({
-            id: dp.donationPoint as string,
-            name: dp.donationPoint as string,
-            count: dp.quantity as number,
-          }),
+        data.cancellationAnalysis.topDonationPoints.map(
+          (dp: Record<string, unknown>) => {
+            return {
+              id: dp.donationPoint as string,
+              name: dp.donationPoint as string,
+              totalKg: dp.totalKg as number,
+              quantity: dp.quantity as number,
+            };
+          },
         ),
       )
     : [];
+
   const riskDonorDataset = data?.predictiveAnalysis?.riskDonors
     ? RiskDonorAdapter(
         data.predictiveAnalysis.riskDonors.map(
@@ -93,13 +104,23 @@ export default function DashboardPage() {
         return formatNumber(data.cancellationAnalysis.kpis.totalKgCancelled);
       case 'kpi-3':
         return (
-          data.cancellationAnalysis.kpis.cancellationProbability.toFixed(2) +
-          '%'
+         formatNumber( data.cancellationAnalysis.kpis.cancellationProbability * 100 )+ '%'
         );
       case 'kpi-4':
         return formatNumber(data.cancellationAnalysis.kpis.totalGeneral);
       default:
         return '';
+    }
+  };
+
+  const getDataset = (id: string) => {
+    switch (id) {
+      case 'chart-1':
+        return donorDataset;
+      case 'chart-2':
+        return topDonationPointDataset;
+      default:
+        return [];
     }
   };
 
@@ -113,50 +134,41 @@ export default function DashboardPage() {
             </div>
           )}
           {dashboardConfig.map((section) => {
-            const gridWidgets = section.widgets.filter(
-              (w: Record<string, unknown>) => w.className !== 'col',
-            );
-            const colWidgets = section.widgets.filter(
-              (w: Record<string, unknown>) => w.className === 'col',
-            );
-
             const renderWidget = (widget: Record<string, unknown>) => {
               const typedWidget = widget as Record<string, unknown>;
               switch (widget.type) {
                 case 'kpi':
                   return (
                     <KpiCard
-                      key={widget.id}
-                      title={widget.title}
-                      value={getKpiValue(widget.id)}
+                      key={widget.id as string}
+                      title={widget.title as string}
+                      value={getKpiValue(widget.id as string)}
                       loading={isLoading}
+                      textColor={widget.textColor as string}
+                      subtitle={widget.subtitle as string}
                     />
                   );
                 case 'bar':
                   return (
                     <ChartCard
-                      key={widget.id}
-                      title={widget.title}
+                      key={widget.id as string}
+                      title={widget.title as string}
                       subtitle={typedWidget.subtitle as string}
                     >
                       <BarChart
-                        dataset={
-                          widget.id === 'chart-5'
-                            ? donorDataset
-                            : riskPointDataset
-                        }
+                        dataset={getDataset(widget.id as string)}
                         config={typedWidget.config as ChartConfig}
                         loading={isLoading}
                         error={!!error}
-                        minWidth={500}
+                        minWidth={250}
                       />
                     </ChartCard>
                   );
                 case 'horizontalBar':
                   return (
                     <ChartCard
-                      key={widget.id}
-                      title={widget.title}
+                      key={widget.id as string}
+                      title={widget.title as string}
                       subtitle={typedWidget.subtitle as string}
                     >
                       <HorizontalBarChart
@@ -174,8 +186,8 @@ export default function DashboardPage() {
                 case 'scatter':
                   return (
                     <ChartCard
-                      key={widget.id}
-                      title={widget.title}
+                      key={widget.id as string}
+                      title={widget.title as string}
                       subtitle={typedWidget.subtitle as string}
                     >
                       <ScatterChart
@@ -189,8 +201,8 @@ export default function DashboardPage() {
                 case 'map':
                   return (
                     <MapCard
-                      key={widget.id}
-                      title={widget.title}
+                      key={widget.id as string}
+                      title={widget.title as string}
                       loading={isLoading}
                     />
                   );
@@ -205,22 +217,55 @@ export default function DashboardPage() {
                 title={section.title}
                 description={section.description}
               >
-                {gridWidgets.length > 0 && (
-                  <DashboardGrid
-                    columns={{
-                      sm: 1,
-                      md: gridWidgets.length > 2 ? 2 : 1,
-                      lg: gridWidgets.some((w) => w.type === 'kpi') ? 4 : 2,
-                    }}
-                  >
-                    {gridWidgets.map(renderWidget)}
-                  </DashboardGrid>
-                )}
-                {colWidgets.length > 0 && (
-                  <div className="mt-6 flex flex-col gap-6">
-                    {colWidgets.map(renderWidget)}
-                  </div>
-                )}
+                {(
+                  section.widgets as {
+                    itemSpacing?: number;
+                    rowSpacing?: number;
+                    items: Record<string, unknown>[];
+                  }[]
+                ).map((row, rowIndex) => {
+                  const { items, itemSpacing, rowSpacing } = row;
+                  const isKpiRow = items.every((w) => w.type === 'kpi');
+
+                  // KPI rows: sm→1, md→2, lg→full count
+                  // Chart rows: dynamically collapse to 1 col below CHART_SINGLE_COL_BREAKPOINT
+                  const chartCols =
+                    windowWidth > 0 && windowWidth < CHART_SINGLE_COL_BREAKPOINT
+                      ? 1
+                      : items.length > 1
+                        ? 2
+                        : 1;
+
+                  const columns = isKpiRow
+                    ? {
+                        sm: 1,
+                        md: 2,
+                        lg: items.length as 1 | 2 | 3 | 4,
+                      }
+                    : {
+                        sm: 1,
+                        md: chartCols as 1 | 2,
+                        lg: items.length > 1 ? 2 : 1,
+                      };
+
+                  return (
+                    <div
+                      key={rowIndex}
+                      style={{
+                        marginBottom: rowSpacing
+                          ? `${rowSpacing * 4}px`
+                          : undefined,
+                      }}
+                    >
+                      <DashboardGrid
+                        columns={columns}
+                        gap={itemSpacing ? String(itemSpacing) : undefined}
+                      >
+                        {items.map(renderWidget)}
+                      </DashboardGrid>
+                    </div>
+                  );
+                })}
               </DashboardSection>
             );
           })}

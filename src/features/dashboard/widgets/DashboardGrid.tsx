@@ -10,8 +10,9 @@ interface DashboardGridProps {
     lg?: number;
     xl?: number;
   };
+  gap?: string;
 }
 
-export const DashboardGrid = ({ children, columns }: DashboardGridProps) => {
-  return <ResponsiveGrid columns={columns}>{children}</ResponsiveGrid>;
+export const DashboardGrid = ({ children, columns, gap }: DashboardGridProps) => {
+  return <ResponsiveGrid columns={columns} gap={gap}>{children}</ResponsiveGrid>;
 };

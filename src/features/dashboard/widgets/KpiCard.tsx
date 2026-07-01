@@ -13,6 +13,7 @@ interface KpiCardProps {
   icon?: React.ReactNode;
   loading?: boolean;
   error?: boolean;
+  textColor: string;
 }
 
 export const KpiCard = ({
@@ -23,6 +24,7 @@ export const KpiCard = ({
   icon,
   loading,
   error,
+  textColor,
 }: KpiCardProps) => {
   if (loading) {
     return (
@@ -45,9 +47,9 @@ export const KpiCard = ({
   }
 
   return (
-    <DashboardWidget title={title} headerRight={icon}>
+    <DashboardWidget title={title} headerRight={icon} >
       <div className="mt-2">
-        <div className="text-3xl font-bold">{value}</div>
+        <div className={`text-3xl font-bold ${textColor}`}>{value}</div>
         {(subtitle || trend) && (
           <div className="mt-1 flex items-center text-sm">
             {trend && (

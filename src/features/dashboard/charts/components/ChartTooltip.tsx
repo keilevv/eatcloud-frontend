@@ -2,22 +2,41 @@ import React from 'react';
 import { VictoryTooltip } from 'victory';
 
 import { chartThemeConfig } from '../config/chartTheme';
-import { ChartConfig } from '../types/ChartConfig';
 import { formatTooltip } from '../utils/formatTooltip';
 
-interface ChartTooltipProps {
-  config?: ChartConfig;
+export interface ChartTooltipOptions {
+  /** Series color — used as the flyout border to identify which series is hovered */
+  color?: string;
+  /** Optional format string for the displayed value */
+  tooltipFormat?: string;
+  /**
+   * If the chart normalizes Y values (e.g. dual-axis scaling), provide this
+   * to extract the *real* display value from the raw datum instead of datum.y
+   */
+  valueGetter?: (datum: any) => number;
 }
 
-export const ChartTooltip: React.FC<ChartTooltipProps> = ({ config }) => {
+/**
+ * Creates a configured VictoryTooltip element ready to be passed as
+ * `labelComponent` to any Victory series component.
+ *
+ * Usage:
+ *   labelComponent={createChartTooltip({ color, tooltipFormat })}
+ */
+export function createChartTooltip({
+  color,
+  tooltipFormat,
+  valueGetter,
+}: ChartTooltipOptions = {}): React.ReactElement {
   return (
     <VictoryTooltip
-      flyoutPadding={10}
+      flyoutPadding={{ top: 8, bottom: 8, left: 12, right: 12 }}
       cornerRadius={4}
       flyoutStyle={{
         fill: '#0f172a',
-        stroke: 'none',
-        opacity: 0.9,
+        stroke: color ?? 'transparent',
+        strokeWidth: color ? 2 : 0,
+        opacity: 0.95,
       }}
       style={{
         fill: '#f8fafc',
@@ -26,10 +45,9 @@ export const ChartTooltip: React.FC<ChartTooltipProps> = ({ config }) => {
       }}
       text={({ datum }) => {
         const xVal = typeof datum.xName !== 'undefined' ? datum.xName : datum.x;
-        return formatTooltip(xVal, datum.y, config?.tooltipFormat);
+        const yVal = valueGetter ? valueGetter(datum) : datum.y;
+        return formatTooltip(xVal, yVal, tooltipFormat as any);
       }}
     />
   );
-};
-
-Object.assign(ChartTooltip, VictoryTooltip);
+}
