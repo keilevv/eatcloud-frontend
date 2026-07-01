@@ -8,6 +8,8 @@ import { RiskDonorAdapter } from '@/features/dashboard/charts/adapters/RiskDonor
 import { RiskPointAdapter } from '@/features/dashboard/charts/adapters/RiskPointAdapter';
 import { ScatterAdapter } from '@/features/dashboard/charts/adapters/ScatterAdapter';
 import { BarChart } from '@/features/dashboard/charts/components/BarChart';
+import { ClusterMarkerMap } from '@/features/dashboard/charts/components/ClusterMarkerMap';
+import { HeatMapChart, MapPoint } from '@/features/dashboard/charts/components/HeatMapChart';
 import { HorizontalBarChart } from '@/features/dashboard/charts/components/HorizontalBarChart';
 import { ScatterChart } from '@/features/dashboard/charts/components/ScatterChart';
 import { ChartConfig } from '@/features/dashboard/charts/types/ChartConfig';
@@ -58,6 +60,20 @@ export default function DashboardPage() {
           },
         ),
       )
+    : [];
+
+  // Raw map points (with lat/lon) passed directly to the Leaflet map components
+  const rawMapPoints: MapPoint[] = data?.cancellationAnalysis?.mapPoints
+    ? data.cancellationAnalysis.mapPoints.map((mp: Record<string, unknown>) => ({
+        latitude: mp.latitude as number,
+        longitude: mp.longitude as number,
+        donationPoint: mp.donationPoint as string,
+        donor: mp.donor as string,
+        city: mp.city as string | undefined,
+        department: mp.department as string | undefined,
+        quantity: mp.quantity as number,
+        totalKg: mp.totalKg as number,
+      }))
     : [];
 
   const riskDonorDataset = data?.predictiveAnalysis?.riskDonors
@@ -198,13 +214,31 @@ export default function DashboardPage() {
                       />
                     </ChartCard>
                   );
-                case 'map':
+                case 'heatMap':
                   return (
                     <MapCard
                       key={widget.id as string}
                       title={widget.title as string}
                       loading={isLoading}
-                    />
+                    >
+                      <HeatMapChart
+                        points={rawMapPoints}
+                        mode={(typedWidget.mode as 'quantity' | 'totalKg') ?? 'quantity'}
+                      />
+                    </MapCard>
+                  );
+                case 'clusterMap':
+                  return (
+                    <MapCard
+                      key={widget.id as string}
+                      title={widget.title as string}
+                      loading={isLoading}
+                    >
+                      <ClusterMarkerMap
+                        points={rawMapPoints}
+                        mode={(typedWidget.mode as 'quantity' | 'totalKg') ?? 'quantity'}
+                      />
+                    </MapCard>
                   );
                 default:
                   return null;

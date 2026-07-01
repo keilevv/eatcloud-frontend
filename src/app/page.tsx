@@ -1,9 +1,5 @@
-import { ThemeToggle } from '@/components/common/ThemeToggle';
+import DashboardPage from './dashboard/page';
 
 export default function HomePage() {
-  return (
-    <main className="flex min-h-screen items-center justify-center">
-      <ThemeToggle />
-    </main>
-  );
+  return <DashboardPage />;
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { LayoutDashboard, BarChart3, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, Settings, LogOut } from 'lucide-react';
 import Link from 'next/link';
 
 import { useLogout } from '@/features/auth/hooks/useLogout';
@@ -12,7 +12,6 @@ const navigation = [
     icon: LayoutDashboard,
     current: true,
   },
-  { name: 'Analytics', href: '#', icon: BarChart3, current: false },
   { name: 'Settings', href: '#', icon: Settings, current: false },
 ];
 

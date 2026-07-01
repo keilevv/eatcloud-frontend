@@ -2,6 +2,7 @@
 
 import { Menu, Bell } from 'lucide-react';
 
+import { ThemeToggle } from '@/components/common/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { UserMenu } from '@/features/auth/components/UserMenu';
 
@@ -23,11 +24,11 @@ export const DashboardHeader = () => {
           Dashboard / Overview
         </div>
       </div>
-      <div className="flex items-center gap-4">
-        {/* Theme Toggle placeholder */}
+      <div className="flex items-center gap-2">
         <Button variant="ghost" size="icon" aria-label="Notifications">
           <Bell className="h-5 w-5" />
         </Button>
+        <ThemeToggle />
         <UserMenu />
       </div>
     </header>
