@@ -45,6 +45,7 @@ export const ChartCard = ({
       title={title}
       description={subtitle}
       className="min-h-[400px]"
+      contentClassName="overflow-visible"
     >
       {children || (
         <div className="text-muted-foreground flex h-full min-h-[300px] items-center justify-center rounded-lg border-2 border-dashed text-sm">

@@ -9,6 +9,7 @@ interface BarChartSeriesProps {
   normalizedDataset: ChartSeries[];
   lineScaleRatio: number;
   tooltipFormat?: string;
+  horizontal?: boolean;
 }
 
 const getColor = (series: ChartSeries, index: number) =>
@@ -26,6 +27,7 @@ export function renderBarChartSeries({
   normalizedDataset,
   lineScaleRatio,
   tooltipFormat,
+  horizontal = false,
 }: BarChartSeriesProps): React.ReactElement[] {
   const elements: React.ReactElement[] = [];
 
@@ -38,6 +40,7 @@ export function renderBarChartSeries({
         <VictoryBar
           key={series.id}
           data={series.data}
+          horizontal={horizontal}
           style={{ data: { fill: color } }}
           labelComponent={createChartTooltip({ color, tooltipFormat })}
           labels={() => ''}

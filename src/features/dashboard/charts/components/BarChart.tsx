@@ -4,6 +4,7 @@ import { VictoryLegend } from 'victory';
 import { ChartProps } from '../types/ChartProps';
 import { ChartSeries } from '../types/ChartSeries';
 import { chartThemeConfig } from '../config/chartTheme';
+import { chartMargins } from '../config/chartMargins';
 import { VictoryChartWrapper } from '../wrappers/VictoryChartWrapper';
 
 import { renderBarChartAxes } from './BarChartAxes';
@@ -74,6 +75,7 @@ export const BarChart: React.FC<ChartProps> = ({
   config,
   height,
   minWidth,
+  horizontal = false,
 }) => {
   const isEmpty =
     !dataset ||
@@ -96,13 +98,6 @@ export const BarChart: React.FC<ChartProps> = ({
       ? normalizeDualAxis(dataset)
       : { normalizedDataset: dataset ?? [], lineScaleRatio: 1, rightAxisTicks: [] };
 
-  const chartPadding = {
-    top: 40,
-    bottom: 100,
-    left: 60,
-    right: isDualAxis ? 55 : 30,
-  };
-
   return (
     <ChartContainer
       title={title}
@@ -119,6 +114,19 @@ export const BarChart: React.FC<ChartProps> = ({
           ? Math.max(width, finalMinWidth)
           : width;
         const hideXLabels = effectiveWidth < X_LABEL_HIDE_THRESHOLD;
+        const hideCategoryLabels = horizontal && effectiveWidth < X_LABEL_HIDE_THRESHOLD;
+
+        const chartPadding = horizontal
+          ? {
+              ...chartMargins.horizontalBar,
+              left: hideCategoryLabels ? 40 : chartMargins.horizontalBar.left,
+            }
+          : {
+              top: 40,
+              bottom: 100,
+              left: 60,
+              right: isDualAxis ? 55 : 30,
+            };
 
         const legendData = dataset
           ? dataset.map((series, index) => ({
@@ -137,11 +145,16 @@ export const BarChart: React.FC<ChartProps> = ({
           <VictoryChartWrapper
             width={width}
             height={height}
-            domainPadding={{ x: 20, y: 20 }}
-            padding={{
-              ...chartPadding,
-              bottom: hideXLabels ? 50 : chartPadding.bottom,
-            }}
+            horizontal={horizontal}
+            domainPadding={horizontal ? { x: 20 } : { x: 20, y: 20 }}
+            padding={
+              horizontal
+                ? chartPadding
+                : {
+                    ...chartPadding,
+                    bottom: hideXLabels ? 50 : chartPadding.bottom,
+                  }
+            }
             minWidth={finalMinWidth}
           >
             {/* Legend */}
@@ -159,10 +172,12 @@ export const BarChart: React.FC<ChartProps> = ({
             {/* Axes */}
             {renderBarChartAxes({
               config,
-              hideXLabels,
+              hideXLabels: horizontal ? false : hideXLabels,
+              hideCategoryLabels,
               isDualAxis,
               lineScaleRatio,
               rightAxisTicks,
+              horizontal,
             })}
 
             {/* Series (bars, lines, scatter overlays) */}
@@ -170,6 +185,7 @@ export const BarChart: React.FC<ChartProps> = ({
               normalizedDataset,
               lineScaleRatio,
               tooltipFormat: config?.tooltipFormat,
+              horizontal,
             })}
           </VictoryChartWrapper>
         );

@@ -20,6 +20,12 @@ export const RiskPointAdapter = (
     meta: item,
   }));
 
-  const sorted = sortSeriesDesc(points).slice(0, limit);
+  // Deduplicate by x (name) before sorting
+  const uniquePoints = points.filter(
+    (point, index, self) =>
+      index === self.findIndex((p) => p.x === point.x)
+  );
+
+  const sorted = sortSeriesDesc(uniquePoints).slice(0, limit);
   return [buildSeries('risk-points', 'Risk Points', sorted)];
 };

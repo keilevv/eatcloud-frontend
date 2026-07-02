@@ -13,4 +13,5 @@ export interface ChartProps<T = unknown> {
   config?: ChartConfig;
   onClick?: (point: unknown) => void;
   minWidth?: number;
+  horizontal?: boolean;
 }

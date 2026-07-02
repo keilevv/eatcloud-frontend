@@ -10,7 +10,6 @@ import { ScatterAdapter } from '@/features/dashboard/charts/adapters/ScatterAdap
 import { BarChart } from '@/features/dashboard/charts/components/BarChart';
 import { ClusterMarkerMap } from '@/features/dashboard/charts/components/ClusterMarkerMap';
 import { HeatMapChart, MapPoint } from '@/features/dashboard/charts/components/HeatMapChart';
-import { HorizontalBarChart } from '@/features/dashboard/charts/components/HorizontalBarChart';
 import { ScatterChart } from '@/features/dashboard/charts/components/ScatterChart';
 import { ChartConfig } from '@/features/dashboard/charts/types/ChartConfig';
 import { dashboardConfig } from '@/features/dashboard/config/dashboard.config';
@@ -76,24 +75,26 @@ export default function DashboardPage() {
       }))
     : [];
 
-  const riskDonorDataset = data?.predictiveAnalysis?.riskDonors
+  const riskDonorDataset = data?.predictiveAnalysis?.topRiskDonors
     ? RiskDonorAdapter(
-        data.predictiveAnalysis.riskDonors.map(
+        data.predictiveAnalysis.topRiskDonors.map(
           (rd: Record<string, unknown>) => ({
             id: rd.donor as string,
             name: rd.donor as string,
-            riskPercentage: rd.riskProbability as number,
+            riskPercentage: Number(rd.probability) * 100,
           }),
         ),
+        15,
       )
     : [];
-  const riskPointDataset = data?.predictiveAnalysis?.riskPoints
+  
+  const riskPointDataset = data?.predictiveAnalysis?.topRiskDonationPoints
     ? RiskPointAdapter(
-        data.predictiveAnalysis.riskPoints.map(
+        data.predictiveAnalysis.topRiskDonationPoints.map(
           (rp: Record<string, unknown>) => ({
             id: rp.donationPoint as string,
             name: rp.donationPoint as string,
-            riskPercentage: rp.riskProbability as number,
+            riskPercentage: Number(rp.probability) * 100,
           }),
         ),
       )
@@ -141,6 +142,10 @@ export default function DashboardPage() {
         return donorDataset;
       case 'chart-2':
         return topDonationPointDataset;
+      case 'chart-3':
+        return riskDonorDataset;
+      case 'chart-4':
+        return riskPointDataset;
       default:
         return [];
     }
@@ -183,6 +188,7 @@ export default function DashboardPage() {
                         loading={isLoading}
                         error={!!error}
                         minWidth={250}
+                        horizontal={false}
                       />
                     </ChartCard>
                   );
@@ -193,15 +199,13 @@ export default function DashboardPage() {
                       title={widget.title as string}
                       subtitle={typedWidget.subtitle as string}
                     >
-                      <HorizontalBarChart
-                        dataset={
-                          widget.id === 'chart-2'
-                            ? donationPointDataset
-                            : riskDonorDataset
-                        }
+                      <BarChart
+                        dataset={getDataset(widget.id as string)}
                         config={typedWidget.config as ChartConfig}
                         loading={isLoading}
                         error={!!error}
+                        minWidth={250}
+                        horizontal={true}
                       />
                     </ChartCard>
                   );

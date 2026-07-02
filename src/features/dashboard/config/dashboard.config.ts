@@ -120,6 +120,22 @@ export const dashboardConfig = [
           }
         ],
       },
+      {
+        itemSpacing: 4,
+        rowSpacing: 6,
+        items: [
+          {
+            id: 'chart-3',
+            type: 'horizontalBar',
+            title: 'Top 10 Donantes con Mayor Riesgo',
+          },
+          {
+            id: 'chart-4',
+            type: 'bar',
+            title: 'Top 15 Puntos con Mayor Riesgo',
+          },
+        ],
+      },
     ],
   },
 ];

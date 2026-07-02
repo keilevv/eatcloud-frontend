@@ -60,7 +60,7 @@ export const ChartContainer: React.FC<ChartContainerProps> = ({
           !empty &&
           dimensions.width > 0 &&
           dimensions.height > 0 && (
-            <div className="absolute inset-0 overflow-x-auto overflow-y-hidden">
+            <div className="absolute inset-0 overflow-visible">
               <div
                 style={{
                   minWidth: minWidth ? `${minWidth}px` : '100%',

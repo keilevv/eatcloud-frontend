@@ -8,9 +8,11 @@ import { formatLabels } from '../utils/formatLabels';
 interface BarChartAxesProps {
   config?: ChartConfig;
   hideXLabels: boolean;
+  hideCategoryLabels?: boolean;
   isDualAxis: boolean;
   lineScaleRatio: number;
   rightAxisTicks?: number[];
+  horizontal?: boolean;
 }
 
 /**
@@ -21,31 +23,39 @@ interface BarChartAxesProps {
 export function renderBarChartAxes({
   config,
   hideXLabels,
+  hideCategoryLabels = false,
   isDualAxis,
   lineScaleRatio,
   rightAxisTicks,
+  horizontal = false,
 }: BarChartAxesProps): React.ReactElement[] {
   const axes: React.ReactElement[] = [
-    // X Axis
+    // X Axis (bottom in vertical, left in horizontal — category labels)
     <VictoryAxis
       key="axis-x"
-      tickFormat={hideXLabels ? () => '' : (t) => formatLabels(String(t))}
-      label={config?.xAxisLabel}
+      orientation={horizontal ? 'left' : undefined}
+      tickFormat={horizontal && hideCategoryLabels ? () => '' : hideXLabels ? () => '' : (t: any) => formatLabels(String(t))}
+      label={horizontal ? config?.yAxisLabel : config?.xAxisLabel}
       style={{
-        tickLabels: hideXLabels
+        tickLabels: hideXLabels || (horizontal && hideCategoryLabels)
           ? { opacity: 0 }
-          : { angle: -45, textAnchor: 'end', padding: 15, fontSize: 16 },
+          : {
+              angle: horizontal ? 0 : -45,
+              textAnchor: 'end',
+              padding: horizontal ? 8 : 15,
+              fontSize: horizontal ? 12 : 16,
+            },
         axisLabel: { padding: 40 },
       }}
     />,
 
-    // Left Y Axis
+    // Left Y Axis (left in vertical, bottom in horizontal)
     <VictoryAxis
       key="axis-left"
       dependentAxis
-      orientation="left"
-      tickFormat={(t) => formatAxis(t, config?.yAxisFormat)}
-      label={config?.yAxisLabel}
+      orientation={horizontal ? 'bottom' : 'left'}
+      tickFormat={(t: any) => formatAxis(t, config?.yAxisFormat)}
+      label={horizontal ? config?.xAxisLabel : config?.yAxisLabel}
       style={{
         tickLabels: { fontSize: 12 },
         axisLabel: { padding: 40 },
@@ -53,13 +63,13 @@ export function renderBarChartAxes({
     />,
   ];
 
-  // Right Y Axis — only in dual-axis mode
+  // Right Axis — only in dual-axis mode (top in horizontal, right in vertical)
   if (isDualAxis) {
     axes.push(
       <VictoryAxis
         key="axis-right"
         dependentAxis
-        orientation="right"
+        orientation={horizontal ? 'top' : 'right'}
         tickValues={rightAxisTicks}
         tickFormat={(t: any) =>
           formatAxis(Number(t) * lineScaleRatio, config?.yAxisFormat)
