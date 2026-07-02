@@ -136,6 +136,17 @@ export const dashboardConfig = [
           },
         ],
       },
+      {
+        itemSpacing: 4,
+        rowSpacing: 6,
+        items: [
+          {
+            id: 'scatter-1',
+            type: 'scatter',
+            title: 'Dispersión: Volumen de Anuncios vs Probabilidad',
+          },
+        ],
+      },
     ],
   },
 ];

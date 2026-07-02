@@ -21,12 +21,6 @@ export const RiskDonorAdapter = (
     meta: item,
   }));
 
-  // Deduplicate by x (name) before sorting
-  const uniquePoints = points.filter(
-    (point, index, self) =>
-      index === self.findIndex((p) => p.x === point.x)
-  );
-
-  const sorted = sortSeriesDesc(uniquePoints).slice(0, limit);
-  return [buildSeries('risk-donors', 'Risk Donors', sorted)];
+  const sorted = sortSeriesDesc(points).slice(0, limit);
+  return [{ ...buildSeries('risk-donors', 'Risk Donors', sorted), type: 'bar', color: '#F97316' }];
 };

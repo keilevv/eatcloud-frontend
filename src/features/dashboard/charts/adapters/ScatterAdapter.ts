@@ -12,12 +12,15 @@ export interface ScatterDTO {
 export const ScatterAdapter = (
   dtoData: ScatterDTO[],
 ): ChartSeries<ScatterDTO>[] => {
-  const points: ChartPoint<ScatterDTO>[] = dtoData.map((item) => ({
+
+  const probabilityPoints: ChartPoint<ScatterDTO>[] = dtoData.map((item) => ({
     x: item.announcements,
     y: item.cancellationProbability,
     label: item.name,
     meta: item,
   }));
 
-  return [buildSeries('scatter-analysis', 'Scatter Analysis', points)];
+  return [
+    buildSeries('probability', 'Prob. Cancelación', probabilityPoints, '#ef4444'),
+  ];
 };

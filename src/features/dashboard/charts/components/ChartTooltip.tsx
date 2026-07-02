@@ -44,7 +44,7 @@ export function createChartTooltip({
         fontFamily: chartThemeConfig.typography.fontFamily,
       }}
       text={({ datum }) => {
-        const xVal = typeof datum.xName !== 'undefined' ? datum.xName : datum.x;
+        const xVal = typeof datum.xName !== 'undefined' ? datum.xName : datum.label;
         const yVal = valueGetter ? valueGetter(datum) : datum.y;
         return formatTooltip(xVal, yVal, tooltipFormat as any);
       }}

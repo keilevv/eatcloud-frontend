@@ -9,7 +9,10 @@ import { RiskPointAdapter } from '@/features/dashboard/charts/adapters/RiskPoint
 import { ScatterAdapter } from '@/features/dashboard/charts/adapters/ScatterAdapter';
 import { BarChart } from '@/features/dashboard/charts/components/BarChart';
 import { ClusterMarkerMap } from '@/features/dashboard/charts/components/ClusterMarkerMap';
-import { HeatMapChart, MapPoint } from '@/features/dashboard/charts/components/HeatMapChart';
+import {
+  HeatMapChart,
+  MapPoint,
+} from '@/features/dashboard/charts/components/HeatMapChart';
 import { ScatterChart } from '@/features/dashboard/charts/components/ScatterChart';
 import { ChartConfig } from '@/features/dashboard/charts/types/ChartConfig';
 import { dashboardConfig } from '@/features/dashboard/config/dashboard.config';
@@ -63,16 +66,18 @@ export default function DashboardPage() {
 
   // Raw map points (with lat/lon) passed directly to the Leaflet map components
   const rawMapPoints: MapPoint[] = data?.cancellationAnalysis?.mapPoints
-    ? data.cancellationAnalysis.mapPoints.map((mp: Record<string, unknown>) => ({
-        latitude: mp.latitude as number,
-        longitude: mp.longitude as number,
-        donationPoint: mp.donationPoint as string,
-        donor: mp.donor as string,
-        city: mp.city as string | undefined,
-        department: mp.department as string | undefined,
-        quantity: mp.quantity as number,
-        totalKg: mp.totalKg as number,
-      }))
+    ? data.cancellationAnalysis.mapPoints.map(
+        (mp: Record<string, unknown>) => ({
+          latitude: mp.latitude as number,
+          longitude: mp.longitude as number,
+          donationPoint: mp.donationPoint as string,
+          donor: mp.donor as string,
+          city: mp.city as string | undefined,
+          department: mp.department as string | undefined,
+          quantity: mp.quantity as number,
+          totalKg: mp.totalKg as number,
+        }),
+      )
     : [];
 
   const riskDonorDataset = data?.predictiveAnalysis?.topRiskDonors
@@ -87,7 +92,7 @@ export default function DashboardPage() {
         15,
       )
     : [];
-  
+
   const riskPointDataset = data?.predictiveAnalysis?.topRiskDonationPoints
     ? RiskPointAdapter(
         data.predictiveAnalysis.topRiskDonationPoints.map(
@@ -102,15 +107,20 @@ export default function DashboardPage() {
   const scatterDataset = data?.predictiveAnalysis?.scatterPlot
     ? ScatterAdapter(
         data.predictiveAnalysis.scatterPlot.map(
-          (sp: Record<string, unknown>) => ({
-            id: sp.name as string,
-            name: sp.name as string,
-            announcements: sp.x as number,
-            cancellationProbability: sp.y as number,
-          }),
+          (sp: Record<string, unknown>) => {
+            return {
+              id: sp.name as string,
+              name: sp.name as string,
+              announcements: sp.announcements as number,
+              cancellationProbability: Math.round(Number(sp.cancellationProbability) * 100),
+            };
+          },
         ),
       )
     : [];
+
+    console.log("scatterDataset", scatterDataset)
+
 
   const getKpiValue = (id: string) => {
     if (!data?.cancellationAnalysis?.kpis) return 'Loading...';
@@ -121,16 +131,21 @@ export default function DashboardPage() {
         return formatNumber(data.cancellationAnalysis.kpis.totalKgCancelled);
       case 'kpi-3':
         return (
-         formatNumber( data.cancellationAnalysis.kpis.cancellationProbability * 100 )+ '%'
+          formatNumber(
+            data.cancellationAnalysis.kpis.cancellationProbability * 100,
+          ) + '%'
         );
       case 'kpi-4':
         return formatNumber(data.cancellationAnalysis.kpis.totalGeneral);
       case 'kpi-5':
-        return data.predictiveAnalysis?.highestRiskPoint?.donationPoint || 'Loading...';
+        return (
+          data.predictiveAnalysis?.highestRiskPoint?.donationPoint ||
+          'Loading...'
+        );
       case 'kpi-6':
         return data.predictiveAnalysis?.highestRiskDonor?.donor || 'Loading...';
       case 'kpi-7':
-        return formatNumber(data.predictiveAnalysis?.excellentPoints|| 0);
+        return formatNumber(data.predictiveAnalysis?.excellentPoints || 0);
       default:
         return '';
     }
@@ -233,7 +248,10 @@ export default function DashboardPage() {
                     >
                       <HeatMapChart
                         points={rawMapPoints}
-                        mode={(typedWidget.mode as 'quantity' | 'totalKg') ?? 'quantity'}
+                        mode={
+                          (typedWidget.mode as 'quantity' | 'totalKg') ??
+                          'quantity'
+                        }
                       />
                     </MapCard>
                   );
@@ -246,7 +264,10 @@ export default function DashboardPage() {
                     >
                       <ClusterMarkerMap
                         points={rawMapPoints}
-                        mode={(typedWidget.mode as 'quantity' | 'totalKg') ?? 'quantity'}
+                        mode={
+                          (typedWidget.mode as 'quantity' | 'totalKg') ??
+                          'quantity'
+                        }
                       />
                     </MapCard>
                   );

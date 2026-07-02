@@ -27,5 +27,5 @@ export const RiskPointAdapter = (
   );
 
   const sorted = sortSeriesDesc(uniquePoints).slice(0, limit);
-  return [buildSeries('risk-points', 'Risk Points', sorted)];
+  return [{ ...buildSeries('risk-points', 'Risk Points', sorted), type: 'bar', color: '#DC2626' }];
 };
