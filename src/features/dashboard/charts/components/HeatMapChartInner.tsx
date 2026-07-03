@@ -2,7 +2,11 @@
 
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
+
+import { loadLeafletHeat } from '../utils/loadLeafletHeat';
+import { downsampleMapPoints } from '../utils/downsampleMapPoints';
+import { areMapPointChartPropsEqual } from '../utils/mapChartMemo';
 
 import { HeatMapMode, MapPoint } from './HeatMapChart';
 
@@ -20,24 +24,59 @@ interface HeatMapChartInnerProps {
   height: number;
 }
 
-export const HeatMapChartInner: React.FC<HeatMapChartInnerProps> = ({
+const HeatMapChartInnerComponent: React.FC<HeatMapChartInnerProps> = ({
   points,
   mode,
   height,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
-  const heatLayerRef = useRef<any>(null);
+  const heatLayerRef = useRef<L.Layer | null>(null);
+
+  const sampledPoints = useMemo(
+    () => downsampleMapPoints(points),
+    [points],
+  );
+
+  const validPoints = useMemo(
+    () =>
+      sampledPoints.filter(
+        (point) => point.latitude !== 0 && point.longitude !== 0,
+      ),
+    [sampledPoints],
+  );
+
+  const heatData = useMemo((): [number, number, number][] => {
+    if (validPoints.length === 0) return [];
+
+    const maxVal = Math.max(
+      ...validPoints.map((point) =>
+        mode === 'quantity' ? point.quantity : point.totalKg,
+      ),
+      1,
+    );
+
+    const INTENSITY_EXPONENT = 0.2;
+
+    return validPoints.map((point) => [
+      point.latitude,
+      point.longitude,
+      Math.pow(
+        (mode === 'quantity' ? point.quantity : point.totalKg) / maxVal,
+        INTENSITY_EXPONENT,
+      ),
+    ]);
+  }, [validPoints, mode]);
 
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // Initialise map once
     if (!mapRef.current) {
       mapRef.current = L.map(containerRef.current, {
-        center: [4.5709, -74.2973], // Colombia centroid
+        center: [4.5709, -74.2973],
         zoom: 5,
         zoomControl: true,
+        preferCanvas: true,
       });
 
       L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
@@ -50,50 +89,48 @@ export const HeatMapChartInner: React.FC<HeatMapChartInnerProps> = ({
     return () => {
       mapRef.current?.remove();
       mapRef.current = null;
+      heatLayerRef.current = null;
     };
   }, []);
 
-  // Update heat layer when data or mode changes
   useEffect(() => {
-    if (!mapRef.current || points.length === 0) return;
+    if (!mapRef.current || heatData.length === 0) return;
 
-    const validPoints = points.filter(
-      (p) => p.latitude !== 0 && p.longitude !== 0,
-    );
+    let cancelled = false;
 
-    if (validPoints.length === 0) return;
+    loadLeafletHeat().then(() => {
+      if (!mapRef.current || cancelled) return;
 
-    const maxVal = Math.max(...validPoints.map((p) => (mode === 'quantity' ? p.quantity : p.totalKg)), 1);
+      if (heatLayerRef.current) {
+        mapRef.current.removeLayer(heatLayerRef.current);
+      }
 
-    const heatData: [number, number, number][] = validPoints.map((p) => [
-      p.latitude,
-      p.longitude,
-      (mode === 'quantity' ? p.quantity : p.totalKg) / maxVal, // normalise 0–1
-    ]);
-
-    // Remove old heat layer
-    if (heatLayerRef.current) {
-      mapRef.current.removeLayer(heatLayerRef.current);
-    }
-
-    // Dynamically import leaflet.heat (no @types needed, just attach)
-    import('leaflet.heat').then(() => {
-      if (!mapRef.current) return;
       heatLayerRef.current = (L as any).heatLayer(heatData, {
-        radius: 35,
-        blur: 25,
+        radius: 30,
+        blur: 20,
         maxZoom: 10,
         gradient: {
-          0.0: '#3b00ff',
-          0.2: '#00aaff',
-          0.4: '#00ffaa',
-          0.6: '#aaff00',
-          0.8: '#ffaa00',
-          1.0: '#ff0000',
+          0.0: '#000011',
+          0.2: '#0033ff',
+          0.4: '#00ff88',
+          0.6: '#88ff00',
+          0.8: '#ffee00',
+          1.0: '#ff2200',
         },
       }).addTo(mapRef.current);
     });
-  }, [points, mode]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [heatData]);
 
   return <div ref={containerRef} style={{ height, width: '100%' }} />;
 };
+
+export const HeatMapChartInner = React.memo(
+  HeatMapChartInnerComponent,
+  areMapPointChartPropsEqual,
+);
+
+HeatMapChartInner.displayName = 'HeatMapChartInner';

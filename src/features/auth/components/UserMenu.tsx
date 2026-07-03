@@ -1,5 +1,8 @@
 'use client';
 
+import { LogOut, Settings } from 'lucide-react';
+import Link from 'next/link';
+
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -22,7 +25,7 @@ export const UserMenu = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+        <Button className="relative h-8 w-8 rounded-full bg-blue-400 hover:bg-blue-300 cursor-pointer">
           <div className="bg-primary text-primary-foreground flex h-full w-full items-center justify-center rounded-full font-bold">
             {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
           </div>
@@ -38,11 +41,19 @@ export const UserMenu = () => {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link href="/settings" className="flex cursor-pointer items-center">
+            <Settings className="mr-2 h-4 w-4" />
+            Configuración
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={logout}
-          className="text-destructive cursor-pointer"
+          className="text-destructive flex cursor-pointer items-center"
         >
-          Log out
+          <LogOut className="mr-2 h-4 w-4" />
+          Cerrar sesión
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

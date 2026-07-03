@@ -1,14 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { LayoutDashboard, Settings, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Menu, X } from 'lucide-react';
 import Link from 'next/link';
 
-import { useLogout } from '@/features/auth/hooks/useLogout';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { UserMenu } from '@/features/auth/components/UserMenu';
-import logo from '../../../assets/icn-eatcloud.png'
+import logo from '../../../assets/icn-eatcloud.png';
 
 const navigation = [
   {
@@ -17,11 +16,9 @@ const navigation = [
     icon: LayoutDashboard,
     current: true,
   },
-  { name: 'Settings', href: '/settings', icon: Settings, current: false },
 ];
 
 export const DashboardHeader = () => {
-  const { logout } = useLogout();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
@@ -31,13 +28,9 @@ export const DashboardHeader = () => {
           href="/"
           className="text-primary flex items-center gap-2 text-xl font-bold"
         >
-          <img
-            src={logo.src}
-            alt="EatCloud"
-            className="h-8"
-          />
+          <img src={logo.src} alt="EatCloud" className="h-8" />
         </Link>
-        <nav className="hidden md:flex items-center gap-1">
+        <nav className="hidden items-center gap-1 md:flex">
           {navigation.map((item) => {
             const Icon = item.icon;
             return (
@@ -66,23 +59,19 @@ export const DashboardHeader = () => {
           aria-label="Toggle Menu"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
         >
-          {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          {mobileMenuOpen ? (
+            <X className="h-5 w-5" />
+          ) : (
+            <Menu className="h-5 w-5" />
+          )}
         </Button>
         <ThemeToggle />
         <UserMenu />
-        <button
-          onClick={logout}
-          className="text-muted-foreground hover:bg-muted hover:text-foreground hidden md:flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors"
-        >
-          <LogOut className="h-4 w-4 shrink-0" />
-          Logout
-        </button>
       </div>
 
-      {/* Mobile menu */}
       {mobileMenuOpen && (
-        <div className="absolute top-16 left-0 right-0 bg-background border-b md:hidden">
-          <nav className="flex flex-col p-4 space-y-2">
+        <div className="bg-background absolute top-16 right-0 left-0 border-b md:hidden">
+          <nav className="flex flex-col space-y-2 p-4">
             {navigation.map((item) => {
               const Icon = item.icon;
               return (
@@ -102,16 +91,6 @@ export const DashboardHeader = () => {
                 </Link>
               );
             })}
-            <button
-              onClick={() => {
-                logout();
-                setMobileMenuOpen(false);
-              }}
-              className="text-muted-foreground hover:bg-muted hover:text-foreground flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors"
-            >
-              <LogOut className="h-5 w-5 shrink-0" />
-              Logout
-            </button>
           </nav>
         </div>
       )}

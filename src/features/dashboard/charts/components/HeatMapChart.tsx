@@ -3,6 +3,8 @@
 import dynamic from 'next/dynamic';
 import React from 'react';
 
+import { areMapPointChartPropsEqual } from '../utils/mapChartMemo';
+
 export interface MapPoint {
   latitude: number;
   longitude: number;
@@ -28,14 +30,20 @@ const HeatMapInner = dynamic(
   { ssr: false, loading: () => <div className="bg-muted h-full w-full animate-pulse rounded" /> },
 );
 
-export const HeatMapChart: React.FC<HeatMapChartProps> = ({
+const HeatMapChartComponent = ({
   points,
   mode = 'quantity',
   height = 420,
-}) => {
+}: HeatMapChartProps) => {
   return (
     <div style={{ height }} className="w-full overflow-hidden rounded-lg">
       <HeatMapInner points={points} mode={mode} height={height} />
     </div>
   );
 };
+
+export const HeatMapChart = React.memo(
+  HeatMapChartComponent,
+  areMapPointChartPropsEqual,
+);
+HeatMapChart.displayName = 'HeatMapChart';

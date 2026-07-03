@@ -1,17 +1,9 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useEffect } from 'react';
 import { useForm as useRHForm } from 'react-hook-form';
-import logo from '../../../assets/icn-eatcloud.png';
 
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import {
   Form,
   FormControl,
@@ -21,15 +13,24 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
+import { useSession } from '@/features/auth/hooks/useSession';
 
 import { useUpdateProfile } from '../hooks/useUpdateProfile';
-import { updateProfileSchema, UpdateProfileFormData } from '../schemas/updateProfile.schema';
+import { getChangedProfileFields } from '../utils/getChangedProfileFields';
+
+interface UpdateProfileFormValues {
+  name: string;
+  email: string;
+  password: string;
+}
 
 export const UpdateProfileForm = () => {
-  const { updateProfile, isLoading, error, success } = useUpdateProfile();
+  const { user, isLoading: isSessionLoading } = useSession();
+  const { updateProfile, isLoading, error, success, setSuccess, setError } =
+    useUpdateProfile();
 
-  const form = useRHForm<UpdateProfileFormData>({
-    resolver: zodResolver(updateProfileSchema),
+  const form = useRHForm<UpdateProfileFormValues>({
     defaultValues: {
       name: '',
       email: '',
@@ -37,28 +38,65 @@ export const UpdateProfileForm = () => {
     },
   });
 
-  const onSubmit = async (data: UpdateProfileFormData) => {
-    await updateProfile(data);
+  useEffect(() => {
+    if (!user) return;
+
+    form.reset({
+      name: user.name,
+      email: user.email,
+      password: '',
+    });
+  }, [user, form]);
+
+  const onSubmit = async (data: UpdateProfileFormValues) => {
+    if (!user) return;
+
+    const changes = getChangedProfileFields(
+      { name: user.name, email: user.email },
+      data,
+    );
+
+    if (Object.keys(changes).length === 0) {
+      setError(null);
+      setSuccess(false);
+      return;
+    }
+
+    const updatedUser = await updateProfile(changes);
+
+    if (updatedUser) {
+      form.reset({
+        name: updatedUser.name,
+        email: updatedUser.email,
+        password: '',
+      });
+    }
   };
 
+  if (isSessionLoading) {
+    return (
+      <div className="text-muted-foreground text-sm">Cargando perfil...</div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
   return (
-    <Card className="mx-auto w-full max-w-md">
-      <CardHeader className="space-y-1 text-center">
-        <div className="mb-4 flex justify-center">
-          <img
-            src={logo.src}
-            alt="EatCloud"
-            className="h-12"
-          />
-        </div>
-        <CardTitle className="text-2xl font-bold">Actualizar Perfil</CardTitle>
-        <CardDescription>
-          Actualiza la información de tu cuenta
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+    <div className="w-full max-w-2xl space-y-6">
+      <div>
+        <h2 className="text-lg font-semibold">Perfil</h2>
+        <p className="text-muted-foreground text-sm">
+          Administra la información de tu cuenta.
+        </p>
+      </div>
+
+      <Separator />
+
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <div className="grid gap-6 sm:grid-cols-2">
             <FormField
               control={form.control}
               name="name"
@@ -66,7 +104,7 @@ export const UpdateProfileForm = () => {
                 <FormItem>
                   <FormLabel>Nombre</FormLabel>
                   <FormControl>
-                    <Input placeholder="Tu nombre" {...field} />
+                    <Input {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -79,51 +117,51 @@ export const UpdateProfileForm = () => {
                 <FormItem>
                   <FormLabel>Correo electrónico</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="nombre@ejemplo.com" {...field} />
+                    <Input type="email" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nueva contraseña (opcional)</FormLabel>
-                  <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          </div>
 
-            {error && (
-              <div className="text-destructive bg-destructive/10 rounded-md p-3 text-sm">
-                {error}
-              </div>
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem className="max-w-md">
+                <FormLabel>Nueva contraseña</FormLabel>
+                <FormControl>
+                  <Input
+                    type="password"
+                    placeholder="Dejar en blanco para no cambiar"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
             )}
+          />
 
-            {success && (
-              <div className="text-green-600 bg-green-50 rounded-md p-3 text-sm">
-                Perfil actualizado exitosamente
-              </div>
-            )}
+          {error && (
+            <div className="text-destructive bg-destructive/10 rounded-md p-3 text-sm">
+              {error}
+            </div>
+          )}
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? (
-                <div className="flex items-center gap-2">
-                  <div className="border-background h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"></div>
-                  Actualizando...
-                </div>
-              ) : (
-                'Actualizar Perfil'
-              )}
+          {success && (
+            <div className="rounded-md bg-green-50 p-3 text-sm text-green-600">
+              Perfil actualizado exitosamente
+            </div>
+          )}
+
+          <div className="flex justify-end">
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? 'Guardando...' : 'Guardar cambios'}
             </Button>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+          </div>
+        </form>
+      </Form>
+    </div>
   );
 };

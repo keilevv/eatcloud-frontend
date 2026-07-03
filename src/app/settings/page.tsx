@@ -11,11 +11,7 @@ export default function SettingsPage() {
     <ProtectedLayout>
       <DashboardLayout>
         <DashboardContent>
-          <div className="flex items-center justify-center p-8">
-            <div className="w-full max-w-md">
-              <UpdateProfileForm />
-            </div>
-          </div>
+          <UpdateProfileForm />
         </DashboardContent>
       </DashboardLayout>
     </ProtectedLayout>

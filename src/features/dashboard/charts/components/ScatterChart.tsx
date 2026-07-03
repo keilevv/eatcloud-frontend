@@ -11,6 +11,7 @@ import { ChartContainer } from './ChartContainer';
 import { formatAxis } from '../utils/formatAxis';
 import { formatLabels } from '../utils/formatLabels';
 import { scatterTooltipFormatter } from '../adapters/ScatterAdapter';
+import { areScatterChartPropsEqual } from '../utils/mapChartMemo';
 
 const X_LABEL_HIDE_THRESHOLD = 450;
 const MAX_SCATTER_POINTS = 200;
@@ -280,4 +281,7 @@ const ScatterChartInner: React.FC<ChartProps> = ({
   );
 };
 
-export const ScatterChart = React.memo(ScatterChartInner);
+export const ScatterChart = React.memo(
+  ScatterChartInner,
+  areScatterChartPropsEqual,
+);

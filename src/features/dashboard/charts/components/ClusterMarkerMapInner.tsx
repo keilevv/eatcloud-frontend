@@ -5,7 +5,10 @@ import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import 'leaflet.markercluster';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
+
+import { downsampleClusterMapPoints } from '../utils/downsampleMapPoints';
+import { areMapPointChartPropsEqual } from '../utils/mapChartMemo';
 
 import { ClusterMode } from './ClusterMarkerMap';
 import { MapPoint } from './HeatMapChart';
@@ -60,7 +63,7 @@ function makeCircleIcon(value: number, max: number): L.DivIcon {
   });
 }
 
-export const ClusterMarkerMapInner: React.FC<ClusterMarkerMapInnerProps> = ({
+const ClusterMarkerMapInnerComponent: React.FC<ClusterMarkerMapInnerProps> = ({
   points,
   mode,
   height,
@@ -68,6 +71,30 @@ export const ClusterMarkerMapInner: React.FC<ClusterMarkerMapInnerProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const clusterGroupRef = useRef<any>(null);
+
+  const sampledPoints = useMemo(
+    () => downsampleClusterMapPoints(points),
+    [points],
+  );
+
+  const validPoints = useMemo(
+    () =>
+      sampledPoints.filter(
+        (point) => point.latitude !== 0 && point.longitude !== 0,
+      ),
+    [sampledPoints],
+  );
+
+  const maxVal = useMemo(() => {
+    if (validPoints.length === 0) return 1;
+
+    return Math.max(
+      ...validPoints.map((point) =>
+        mode === 'quantity' ? point.quantity : point.totalKg,
+      ),
+      1,
+    );
+  }, [validPoints, mode]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -77,6 +104,7 @@ export const ClusterMarkerMapInner: React.FC<ClusterMarkerMapInnerProps> = ({
         center: [4.5709, -74.2973],
         zoom: 5,
         zoomControl: true,
+        preferCanvas: true,
       });
 
       L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
@@ -89,21 +117,13 @@ export const ClusterMarkerMapInner: React.FC<ClusterMarkerMapInnerProps> = ({
     return () => {
       mapRef.current?.remove();
       mapRef.current = null;
+      clusterGroupRef.current = null;
     };
   }, []);
 
   useEffect(() => {
-    if (!mapRef.current || points.length === 0) return;
+    if (!mapRef.current || validPoints.length === 0) return;
 
-    const validPoints = points.filter(
-      (p) => p.latitude !== 0 && p.longitude !== 0,
-    );
-    if (validPoints.length === 0) return;
-
-    const values = validPoints.map((p) => (mode === 'quantity' ? p.quantity : p.totalKg));
-    const maxVal = Math.max(...values, 1);
-
-    // Remove old cluster group
     if (clusterGroupRef.current) {
       mapRef.current.removeLayer(clusterGroupRef.current);
     }
@@ -114,29 +134,26 @@ export const ClusterMarkerMapInner: React.FC<ClusterMarkerMapInnerProps> = ({
       iconCreateFunction: (cluster: any) => {
         const total = cluster
           .getAllChildMarkers()
-          .reduce((sum: number, m: any) => sum + (m.options.value ?? 0), 0);
+          .reduce((sum: number, marker: any) => sum + (marker.options.value ?? 0), 0);
         return makeCircleIcon(total, maxVal);
       },
     });
 
-    validPoints.forEach((p) => {
-      const value = mode === 'quantity' ? p.quantity : p.totalKg;
-      const marker = L.marker([p.latitude, p.longitude], {
+    validPoints.forEach((point) => {
+      const value = mode === 'quantity' ? point.quantity : point.totalKg;
+      const marker = L.marker([point.latitude, point.longitude], {
         icon: makeCircleIcon(value, maxVal),
-        // store value so cluster can sum it
-        ...(({ value } as any)),
-      } as any);
+      } as L.MarkerOptions);
 
-      // Store value directly on the options object
       (marker.options as any).value = value;
 
       marker.bindPopup(`
         <div style="min-width:160px">
-          <strong>${p.donationPoint}</strong><br/>
-          <span style="color:#666;font-size:12px">${p.city ?? ''} • ${p.donor}</span><br/>
+          <strong>${point.donationPoint}</strong><br/>
+          <span style="color:#666;font-size:12px">${point.city ?? ''} • ${point.donor}</span><br/>
           <div style="margin-top:6px;font-size:13px">
-            <span>Cantidad: <strong>${p.quantity.toLocaleString()}</strong></span><br/>
-            <span>KG: <strong>${p.totalKg.toLocaleString('es-CO', { maximumFractionDigits: 0 })}</strong></span>
+            <span>Cantidad: <strong>${point.quantity.toLocaleString()}</strong></span><br/>
+            <span>KG: <strong>${point.totalKg.toLocaleString('es-CO', { maximumFractionDigits: 0 })}</strong></span>
           </div>
         </div>
       `);
@@ -146,7 +163,14 @@ export const ClusterMarkerMapInner: React.FC<ClusterMarkerMapInnerProps> = ({
 
     mapRef.current.addLayer(clusterGroup);
     clusterGroupRef.current = clusterGroup;
-  }, [points, mode]);
+  }, [validPoints, mode, maxVal]);
 
   return <div ref={containerRef} style={{ height, width: '100%' }} />;
 };
+
+export const ClusterMarkerMapInner = React.memo(
+  ClusterMarkerMapInnerComponent,
+  areMapPointChartPropsEqual,
+);
+
+ClusterMarkerMapInner.displayName = 'ClusterMarkerMapInner';

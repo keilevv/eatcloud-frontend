@@ -5,9 +5,14 @@ import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import 'leaflet.markercluster';
-import React, { useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+
+import { downsampleGeoPoints } from '../utils/downsampleMapPoints';
+import { areSemaphoreMapPropsEqual } from '../utils/mapChartMemo';
 
 import { SemaphorePoint } from './SemaphoreMap';
+
+const MAX_BENEFICIARY_POINTS = 400;
 
 const formatType = (type: string | undefined) => {
   switch (type) {
@@ -60,8 +65,8 @@ function colorForMeanRisk(meanRisk: number): string {
 /** Calculate mean risk level from an array of points */
 function calculateMeanRisk(points: SemaphorePoint[]): number {
   if (points.length === 0) return 0;
-  const riskValues = points.map((p) => {
-    switch (p.riskLevel) {
+  const riskValues = points.map((point) => {
+    switch (point.riskLevel) {
       case 'LOW': return 0;
       case 'MEDIUM': return 0.5;
       case 'HIGH': return 1;
@@ -130,8 +135,8 @@ function colorForBeneficiaryType(type: string): string {
 function calculateMajorityType(points: SemaphorePoint[]): string {
   if (points.length === 0) return '';
   const typeCounts: Record<string, number> = {};
-  points.forEach((p) => {
-    const type = p.type || '';
+  points.forEach((point) => {
+    const type = point.type || '';
     typeCounts[type] = (typeCounts[type] || 0) + 1;
   });
   
@@ -176,7 +181,7 @@ function makeBeneficiaryIcon(type?: string): L.DivIcon {
   });
 }
 
-export const SemaphoreMapInner: React.FC<SemaphoreMapInnerProps> = ({
+const SemaphoreMapInnerComponent: React.FC<SemaphoreMapInnerProps> = ({
   semaphorePoints,
   beneficiaryPoints,
   height,
@@ -186,6 +191,54 @@ export const SemaphoreMapInner: React.FC<SemaphoreMapInnerProps> = ({
   const semaphoreClusterRef = useRef<L.MarkerClusterGroup | null>(null);
   const beneficiaryClusterRef = useRef<L.MarkerClusterGroup | null>(null);
 
+  const validSemaphorePoints = useMemo(
+    () =>
+      semaphorePoints.filter(
+        (point) => point.latitude !== 0 && point.longitude !== 0,
+      ),
+    [semaphorePoints],
+  );
+
+  const validBeneficiaryPoints = useMemo(
+    () =>
+      downsampleGeoPoints(
+        beneficiaryPoints.filter(
+          (point) => point.latitude !== 0 && point.longitude !== 0,
+        ),
+        MAX_BENEFICIARY_POINTS,
+      ),
+    [beneficiaryPoints],
+  );
+
+  const semaphoreMaxVal = useMemo(() => {
+    if (validSemaphorePoints.length === 0) return 1;
+
+    return Math.max(
+      ...validSemaphorePoints.map((point) => point.value ?? 0),
+      1,
+    );
+  }, [validSemaphorePoints]);
+
+  const fitMapBounds = useCallback(() => {
+    if (
+      !mapRef.current ||
+      !semaphoreClusterRef.current ||
+      !beneficiaryClusterRef.current
+    ) {
+      return;
+    }
+
+    const allLayers = [
+      ...semaphoreClusterRef.current.getLayers(),
+      ...beneficiaryClusterRef.current.getLayers(),
+    ];
+
+    if (allLayers.length === 0) return;
+
+    const group = L.featureGroup(allLayers);
+    mapRef.current.fitBounds(group.getBounds(), { padding: [20, 20] });
+  }, []);
+
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -194,6 +247,7 @@ export const SemaphoreMapInner: React.FC<SemaphoreMapInnerProps> = ({
         center: [4.5709, -74.2973],
         zoom: 5,
         zoomControl: true,
+        preferCanvas: true,
       });
 
       L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
@@ -202,15 +256,14 @@ export const SemaphoreMapInner: React.FC<SemaphoreMapInnerProps> = ({
         maxZoom: 19,
       }).addTo(mapRef.current);
 
-      // Create semaphore cluster group with custom icon function
       semaphoreClusterRef.current = L.markerClusterGroup({
         showCoverageOnHover: false,
         zoomToBoundsOnClick: true,
         spiderfyOnMaxZoom: true,
-        maxClusterRadius: 20,
+        maxClusterRadius: 50,
         iconCreateFunction: (cluster) => {
           const markers = cluster.getAllChildMarkers();
-          const points = markers.map((m) => (m as any).pointData);
+          const points = markers.map((marker) => (marker as any).pointData);
           const meanRisk = calculateMeanRisk(points);
           const color = colorForMeanRisk(meanRisk);
           const count = markers.length;
@@ -237,7 +290,6 @@ export const SemaphoreMapInner: React.FC<SemaphoreMapInnerProps> = ({
         },
       }).addTo(mapRef.current);
 
-      // Create beneficiary cluster group with distinct styling based on majority type
       beneficiaryClusterRef.current = L.markerClusterGroup({
         showCoverageOnHover: false,
         zoomToBoundsOnClick: true,
@@ -245,7 +297,7 @@ export const SemaphoreMapInner: React.FC<SemaphoreMapInnerProps> = ({
         maxClusterRadius: 50,
         iconCreateFunction: (cluster) => {
           const markers = cluster.getAllChildMarkers();
-          const points = markers.map((m) => (m as any).pointData);
+          const points = markers.map((marker) => (marker as any).pointData);
           const majorityType = calculateMajorityType(points);
           const color = colorForBeneficiaryType(majorityType);
           const count = cluster.getChildCount();
@@ -282,79 +334,67 @@ export const SemaphoreMapInner: React.FC<SemaphoreMapInnerProps> = ({
   }, []);
 
   useEffect(() => {
-    if (!mapRef.current || !semaphoreClusterRef.current || !beneficiaryClusterRef.current) return;
+    if (!mapRef.current || !semaphoreClusterRef.current) return;
 
-    // Clear existing markers from both cluster groups
     semaphoreClusterRef.current.clearLayers();
-    beneficiaryClusterRef.current.clearLayers();
 
-    // Process semaphore points (donation points) - add to semaphore cluster
-    const validSemaphorePoints = semaphorePoints.filter(
-      (p) => p.latitude !== 0 && p.longitude !== 0,
-    );
-
-    if (validSemaphorePoints.length > 0) {
-      const donationValues = validSemaphorePoints.map((p) => p.value ?? 0);
-      const maxVal = Math.max(...donationValues, 1);
-
-      validSemaphorePoints.forEach((p) => {
-        const marker = L.marker([p.latitude, p.longitude], {
-          icon: makeDonationPointIcon(p, maxVal),
-        });
-
-        // Store point data for cluster icon calculation
-        (marker as any).pointData = p;
-
-        marker.bindPopup(`
-          <div style="min-width:50px">
-           <span>Punto de donación: <strong>${p.label}</strong></span><br/>
-            <span>Donante: <strong>${p.donor}</strong></span><br/>
-            <div style="margin-top:6px;font-size:13px">
-              <span>Total: <strong>${(p.value ?? 0).toLocaleString()}</strong></span><br/>
-              <span>Riesgo: <strong>${((p.probability ?? 0) * 100).toFixed(2).toLocaleString()}%</strong></span>
-            </div>
-          </div>
-        `);
-
-        semaphoreClusterRef.current!.addLayer(marker);
-      });
-    }
-
-    // Process beneficiary points - add to beneficiary cluster
-    const validBeneficiaryPoints = beneficiaryPoints.filter(
-      (p) => p.latitude !== 0 && p.longitude !== 0,
-    );
-
-    validBeneficiaryPoints.forEach((p) => {
-      const marker = L.marker([p.latitude, p.longitude], {
-        icon: makeBeneficiaryIcon(p.type),
+    validSemaphorePoints.forEach((point) => {
+      const marker = L.marker([point.latitude, point.longitude], {
+        icon: makeDonationPointIcon(point, semaphoreMaxVal),
       });
 
-      // Store point data for cluster icon calculation
-      (marker as any).pointData = p;
+      (marker as any).pointData = point;
 
       marker.bindPopup(`
         <div style="min-width:50px">
-          <span>Beneficiario: <strong>${p.label}</strong></span><br/>
-          <span>Tipo: <strong>${formatType(p.type) + ` (${p.type})`}</strong></span><br/>
-          <span>Estado: <strong>${p.status}</strong></span><br/>
-          ${p.phone ? `<span>Teléfono: <strong>${p.phone}</strong></span><br/>` : ''}
+         <span>Punto de donación: <strong>${point.label}</strong></span><br/>
+          <span>Donante: <strong>${point.donor}</strong></span><br/>
+          <div style="margin-top:6px;font-size:13px">
+            <span>Total: <strong>${(point.value ?? 0).toLocaleString()}</strong></span><br/>
+            <span>Riesgo: <strong>${((point.probability ?? 0) * 100).toFixed(2).toLocaleString()}%</strong></span>
+          </div>
+        </div>
+      `);
+
+      semaphoreClusterRef.current!.addLayer(marker);
+    });
+
+    fitMapBounds();
+  }, [validSemaphorePoints, semaphoreMaxVal, fitMapBounds]);
+
+  useEffect(() => {
+    if (!mapRef.current || !beneficiaryClusterRef.current) return;
+
+    beneficiaryClusterRef.current.clearLayers();
+
+    validBeneficiaryPoints.forEach((point) => {
+      const marker = L.marker([point.latitude, point.longitude], {
+        icon: makeBeneficiaryIcon(point.type),
+      });
+
+      (marker as any).pointData = point;
+
+      marker.bindPopup(`
+        <div style="min-width:50px">
+          <span>Beneficiario: <strong>${point.label}</strong></span><br/>
+          <span>Tipo: <strong>${formatType(point.type) + ` (${point.type})`}</strong></span><br/>
+          <span>Estado: <strong>${point.status}</strong></span><br/>
+          ${point.phone ? `<span>Teléfono: <strong>${point.phone}</strong></span><br/>` : ''}
         </div>
       `);
 
       beneficiaryClusterRef.current!.addLayer(marker);
     });
 
-    // Fit bounds to show all markers from both cluster groups
-    const allLayers = [
-      ...semaphoreClusterRef.current.getLayers(),
-      ...beneficiaryClusterRef.current.getLayers(),
-    ];
-    if (allLayers.length > 0) {
-      const group = L.featureGroup(allLayers);
-      mapRef.current.fitBounds(group.getBounds(), { padding: [20, 20] });
-    }
-  }, [semaphorePoints, beneficiaryPoints]);
+    fitMapBounds();
+  }, [validBeneficiaryPoints, fitMapBounds]);
 
   return <div ref={containerRef} style={{ height, width: '100%' }} />;
 };
+
+export const SemaphoreMapInner = React.memo(
+  SemaphoreMapInnerComponent,
+  areSemaphoreMapPropsEqual,
+);
+
+SemaphoreMapInner.displayName = 'SemaphoreMapInner';

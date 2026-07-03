@@ -36,6 +36,7 @@ export const VictoryChartWrapper: React.FC<VictoryChartWrapperProps> = ({
       height={height}
       padding={padding}
       domainPadding={domainPadding}
+      animate={false}
     >
       {children}
     </VictoryChart>

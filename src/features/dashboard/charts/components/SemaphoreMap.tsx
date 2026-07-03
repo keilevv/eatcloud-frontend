@@ -3,6 +3,8 @@
 import dynamic from 'next/dynamic';
 import React from 'react';
 
+import { areSemaphoreMapPropsEqual } from '../utils/mapChartMemo';
+
 export interface SemaphorePoint {
   id: string;
   label: string;
@@ -32,11 +34,11 @@ const SemaphoreMapInner = dynamic(
   { ssr: false, loading: () => <div className="bg-muted h-full w-full animate-pulse rounded" /> },
 );
 
-export const SemaphoreMap: React.FC<SemaphoreMapProps> = ({
+const SemaphoreMapInnerComponent = ({
   semaphorePoints = [],
   beneficiaryPoints = [],
   height = 420,
-}) => {
+}: SemaphoreMapProps) => {
   return (
     <div style={{ height }} className="w-full overflow-hidden rounded-lg">
       <SemaphoreMapInner 
@@ -47,3 +49,9 @@ export const SemaphoreMap: React.FC<SemaphoreMapProps> = ({
     </div>
   );
 };
+
+export const SemaphoreMap = React.memo(
+  SemaphoreMapInnerComponent,
+  areSemaphoreMapPropsEqual,
+);
+SemaphoreMap.displayName = 'SemaphoreMap';

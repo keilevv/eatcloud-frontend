@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { ProtectedLayout } from '@/features/auth/components/ProtectedLayout';
 import { DonationPointAdapter } from '@/features/dashboard/charts/adapters/DonationPointAdapter';
 import { DonorChartAdapter } from '@/features/dashboard/charts/adapters/DonorChartAdapter';
@@ -27,11 +27,11 @@ import { DashboardFilters } from '@/features/dashboard/services/dashboard.servic
 import { ChartCard } from '@/features/dashboard/widgets/ChartCard';
 import { DashboardGrid } from '@/features/dashboard/widgets/DashboardGrid';
 import { LazySection } from '@/features/dashboard/widgets/LazySection';
+import { LazyWidget } from '@/features/dashboard/widgets/LazyWidget';
 import { KpiCard } from '@/features/dashboard/widgets/KpiCard';
 import { FilterWidget } from '@/features/dashboard/widgets/FilterWidget';
 import { MapCard } from '@/features/dashboard/widgets/MapCard';
 import { formatNumber } from '@/utils';
-import { DashboardSection } from '@/features/dashboard/widgets/DashboardSection';
 
 const CHART_SINGLE_COL_BREAKPOINT = 1000;
 
@@ -54,7 +54,6 @@ export default function DashboardPage() {
   const {
     data: beneficiariesData,
     isLoading: beneficiariesLoading,
-    error: beneficiariesError,
   } = useBeneficiaries(filters);
 
   // Extract filter options from beneficiaries data
@@ -106,6 +105,40 @@ export default function DashboardPage() {
       return typeMatch && statusMatch;
     });
   }, [beneficiaryLocations, selectedTypes, selectedStatuses]);
+
+  // Pre-compute beneficiary points for the semaphore map (was inline inside renderWidget)
+  const beneficiarySemaphorePoints = useMemo(
+    () =>
+      filteredBeneficiaryLocations.map((loc: any) => ({
+        id: loc.name,
+        label: loc.name,
+        latitude: loc.latitude,
+        longitude: loc.longitude,
+        type: loc.type,
+        status: loc.status,
+        phone: loc.phone,
+        city: loc.city,
+        department: loc.department,
+        riskLevel: loc.riskLevel,
+      })),
+    [filteredBeneficiaryLocations],
+  );
+
+  const handleToggleType = useCallback((value: string) => {
+    setSelectedTypes((prev) =>
+      prev.includes(value)
+        ? prev.filter((v) => v !== value)
+        : [...prev, value],
+    );
+  }, []);
+
+  const handleToggleStatus = useCallback((value: string) => {
+    setSelectedStatuses((prev) =>
+      prev.includes(value)
+        ? prev.filter((v) => v !== value)
+        : [...prev, value],
+    );
+  }, []);
 
   const donorDataset = useMemo(
     () =>
@@ -206,6 +239,35 @@ export default function DashboardPage() {
         : { series: [], xAxisLabel: undefined, yAxisLabel: undefined },
     [predictiveData],
   );
+
+  const scatterSeries = useMemo(
+    () =>
+      scatterDataset &&
+      typeof scatterDataset === 'object' &&
+      'series' in scatterDataset
+        ? scatterDataset.series
+        : scatterDataset,
+    [scatterDataset],
+  );
+
+  const scatterChartConfig = useMemo((): ChartConfig => {
+    if (
+      scatterDataset &&
+      typeof scatterDataset === 'object' &&
+      'xAxisLabel' in scatterDataset
+    ) {
+      return {
+        xAxisLabel: scatterDataset.xAxisLabel,
+        yAxisLabel: scatterDataset.yAxisLabel,
+        xAxisFormat: scatterDataset.xAxisFormat,
+        yAxisFormat: scatterDataset.yAxisFormat,
+        y2AxisLabel: scatterDataset.y2AxisLabel,
+        y2AxisFormat: scatterDataset.y2AxisFormat,
+      };
+    }
+
+    return {};
+  }, [scatterDataset]);
 
   const semaphoreMapData = useMemo(
     () => (predictiveData?.semaphoreMap ? predictiveData.semaphoreMap : []),
@@ -364,15 +426,9 @@ export default function DashboardPage() {
             subtitle={typedWidget.subtitle as string}
           >
             <ScatterChart
-              dataset={
-                scatterDataset &&
-                typeof scatterDataset === 'object' &&
-                'series' in scatterDataset
-                  ? scatterDataset.series
-                  : scatterDataset
-              }
+              dataset={scatterSeries}
               config={{
-                ...getChartConfig(widget.id as string),
+                ...scatterChartConfig,
                 ...(typedWidget.config as ChartConfig),
               }}
               loading={predictiveLoading}
@@ -387,27 +443,15 @@ export default function DashboardPage() {
             title={widget.title as string}
             loading={isLoading}
           >
-            <HeatMapChart
-              points={rawMapPoints}
-              mode={(typedWidget.mode as 'quantity' | 'totalKg') ?? 'quantity'}
-            />
+            <LazyWidget>
+              <HeatMapChart
+                points={rawMapPoints}
+                mode={(typedWidget.mode as 'quantity' | 'totalKg') ?? 'quantity'}
+              />
+            </LazyWidget>
           </MapCard>
         );
       case 'semaphoreMap':
-        const beneficiaryPoints = widget.id === 'beneficiaries-map' 
-          ? filteredBeneficiaryLocations.map((loc: any) => ({
-              id: loc.name,
-              label: loc.name,
-              latitude: loc.latitude,
-              longitude: loc.longitude,
-              type: loc.type,
-              status: loc.status,
-              phone: loc.phone,
-              city: loc.city,
-              department: loc.department,
-              riskLevel: loc.riskLevel,
-            }))
-          : [];
         return (
           <MapCard
             key={widget.id as string}
@@ -415,10 +459,12 @@ export default function DashboardPage() {
             subtitle={widget.subtitle as string}
             loading={widget.id === 'beneficiaries-map' ? beneficiariesLoading : predictiveLoading}
           >
-            <SemaphoreMap 
-              semaphorePoints={semaphoreMapData}
-              beneficiaryPoints={beneficiaryPoints}
-            />
+            <LazyWidget>
+              <SemaphoreMap
+                semaphorePoints={semaphoreMapData}
+                beneficiaryPoints={beneficiarySemaphorePoints}
+              />
+            </LazyWidget>
           </MapCard>
         );
       case 'filter':
@@ -429,13 +475,7 @@ export default function DashboardPage() {
               title={widget.title as string}
               subtitle={widget.subtitle as string}
               options={typeFilterOptions}
-              onToggle={(value) => {
-                setSelectedTypes((prev) =>
-                  prev.includes(value)
-                    ? prev.filter((v) => v !== value)
-                    : [...prev, value],
-                );
-              }}
+              onToggle={handleToggleType}
             />
           );
         }
@@ -446,13 +486,7 @@ export default function DashboardPage() {
               title={widget.title as string}
               subtitle={widget.subtitle as string}
               options={statusFilterOptions}
-              onToggle={(value) => {
-                setSelectedStatuses((prev) =>
-                  prev.includes(value)
-                    ? prev.filter((v) => v !== value)
-                    : [...prev, value],
-                );
-              }}
+              onToggle={handleToggleStatus}
             />
           );
         }
@@ -464,10 +498,12 @@ export default function DashboardPage() {
             title={widget.title as string}
             loading={isLoading}
           >
-            <ClusterMarkerMap
-              points={rawMapPoints}
-              mode={(typedWidget.mode as 'quantity' | 'totalKg') ?? 'quantity'}
-            />
+            <LazyWidget>
+              <ClusterMarkerMap
+                points={rawMapPoints}
+                mode={(typedWidget.mode as 'quantity' | 'totalKg') ?? 'quantity'}
+              />
+            </LazyWidget>
           </MapCard>
         );
       default:
@@ -522,6 +558,60 @@ export default function DashboardPage() {
       );
     });
 
+  // ── Memoize each config-driven section so it only re-renders when its domain data changes ──
+  const section0Config = dashboardConfig[0];
+  const section1Config = dashboardConfig[1];
+  const section2Config = dashboardConfig[2];
+
+  // renderGrid omitted intentionally — it changes every render, and we want
+  // the useMemo to freeze the element tree when the section's domain data hasn't changed.
+  /* eslint-disable react-hooks/exhaustive-deps */
+  const cancellationSection = useMemo(
+    () =>
+      renderGrid(
+        section0Config.widgets as {
+          itemSpacing?: number;
+          rowSpacing?: number;
+          items: Record<string, unknown>[];
+        }[],
+      ),
+    [cancellationData, cancellationLoading, cancellationError, rawMapPoints, isLoading, error, windowWidth],
+  );
+
+  const predictiveSection = useMemo(
+    () =>
+      renderGrid(
+        section1Config.widgets as {
+          itemSpacing?: number;
+          rowSpacing?: number;
+          items: Record<string, unknown>[];
+        }[],
+      ),
+    [
+      predictiveData,
+      predictiveLoading,
+      predictiveError,
+      scatterSeries,
+      scatterChartConfig,
+      isLoading,
+      error,
+      windowWidth,
+    ],
+  );
+
+  const beneficiariesSection = useMemo(
+    () =>
+      renderGrid(
+        section2Config.widgets as {
+          itemSpacing?: number;
+          rowSpacing?: number;
+          items: Record<string, unknown>[];
+        }[],
+      ),
+    [beneficiariesData, semaphoreMapData, filteredBeneficiaryLocations, beneficiarySemaphorePoints, typeFilterOptions, statusFilterOptions, handleToggleType, handleToggleStatus, beneficiariesLoading, isLoading, error, windowWidth],
+  );
+  /* eslint-enable react-hooks/exhaustive-deps */
+
   return (
     <ProtectedLayout>
       <DashboardLayout>
@@ -531,27 +621,27 @@ export default function DashboardPage() {
               Failed to load dashboard data.
             </div>
           )}
-          {dashboardConfig.map((section) => {
-            const sectionKey = section.id;
-            const sectionConfig = section;
-
-            return (
-              <LazySection
-                key={sectionKey}
-                title={sectionConfig.title}
-                description={sectionConfig.description}
-                placeholderHeight={200}
-              >
-                {renderGrid(
-                  sectionConfig.widgets as {
-                    itemSpacing?: number;
-                    rowSpacing?: number;
-                    items: Record<string, unknown>[];
-                  }[],
-                )}
-              </LazySection>
-            );
-          })}
+          <LazySection
+            title={section0Config.title}
+            description={section0Config.description}
+            placeholderHeight={200}
+          >
+            {cancellationSection}
+          </LazySection>
+          <LazySection
+            title={section1Config.title}
+            description={section1Config.description}
+            placeholderHeight={200}
+          >
+            {predictiveSection}
+          </LazySection>
+          <LazySection
+            title={section2Config.title}
+            description={section2Config.description}
+            placeholderHeight={200}
+          >
+            {beneficiariesSection}
+          </LazySection>
         </DashboardContent>
       </DashboardLayout>
     </ProtectedLayout>
