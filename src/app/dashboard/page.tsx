@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { ProtectedLayout } from '@/features/auth/components/ProtectedLayout';
 import { DonationPointAdapter } from '@/features/dashboard/charts/adapters/DonationPointAdapter';
 import { DonorChartAdapter } from '@/features/dashboard/charts/adapters/DonorChartAdapter';
@@ -19,6 +19,7 @@ import { ChartConfig } from '@/features/dashboard/charts/types/ChartConfig';
 import { dashboardConfig } from '@/features/dashboard/config/dashboard.config';
 import { useCancellationAnalysis } from '@/features/dashboard/hooks/useCancellationAnalysis';
 import { usePredictiveAnalysis } from '@/features/dashboard/hooks/usePredictiveAnalysis';
+import { useBeneficiaries } from '@/features/dashboard/hooks/useBeneficiaries';
 import { useWindowWidth } from '@/features/dashboard/hooks/useWindowWidth';
 import { DashboardContent } from '@/features/dashboard/layouts/DashboardContent';
 import { DashboardLayout } from '@/features/dashboard/layouts/DashboardLayout';
@@ -27,6 +28,7 @@ import { ChartCard } from '@/features/dashboard/widgets/ChartCard';
 import { DashboardGrid } from '@/features/dashboard/widgets/DashboardGrid';
 import { LazySection } from '@/features/dashboard/widgets/LazySection';
 import { KpiCard } from '@/features/dashboard/widgets/KpiCard';
+import { FilterWidget } from '@/features/dashboard/widgets/FilterWidget';
 import { MapCard } from '@/features/dashboard/widgets/MapCard';
 import { formatNumber } from '@/utils';
 import { DashboardSection } from '@/features/dashboard/widgets/DashboardSection';
@@ -35,6 +37,8 @@ const CHART_SINGLE_COL_BREAKPOINT = 1000;
 
 export default function DashboardPage() {
   const [filters] = [{} as DashboardFilters];
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const {
     data: cancellationData,
     isLoading: cancellationLoading,
@@ -46,6 +50,62 @@ export default function DashboardPage() {
     error: predictiveError,
   } = usePredictiveAnalysis(filters);
   const windowWidth = useWindowWidth();
+
+  const {
+    data: beneficiariesData,
+    isLoading: beneficiariesLoading,
+    error: beneficiariesError,
+  } = useBeneficiaries(filters);
+
+  // Extract filter options from beneficiaries data
+  const typeFilterOptions = useMemo(() => {
+    const byType = beneficiariesData?.visualization?.byType ?? {};
+    return Object.entries(byType).map(([label, count]) => ({
+      label,
+      value: label,
+      count: count as number,
+      selected: selectedTypes.includes(label),
+    }));
+  }, [beneficiariesData, selectedTypes]);
+
+  const statusFilterOptions = useMemo(() => {
+    const byStatus = beneficiariesData?.visualization?.byStatus ?? {};
+    return Object.entries(byStatus).map(([label, count]) => ({
+      label,
+      value: label,
+      count: count as number,
+      selected: selectedStatuses.includes(label),
+    }));
+  }, [beneficiariesData, selectedStatuses]);
+
+  const beneficiaryLocations = useMemo(
+    () => beneficiariesData?.locations ?? [],
+    [beneficiariesData],
+  );
+
+  // Initialize filter states with all values when data loads
+  useEffect(() => {
+    if (beneficiariesData?.visualization) {
+      const allTypes = Object.keys(beneficiariesData.visualization.byType);
+      const allStatuses = Object.keys(beneficiariesData.visualization.byStatus);
+      
+      if (selectedTypes.length === 0 && allTypes.length > 0) {
+        setSelectedTypes(allTypes);
+      }
+      if (selectedStatuses.length === 0 && allStatuses.length > 0) {
+        setSelectedStatuses(allStatuses);
+      }
+    }
+  }, [beneficiariesData]);
+
+  // Filter beneficiary locations based on selected filters
+  const filteredBeneficiaryLocations = useMemo(() => {
+    return beneficiaryLocations.filter((loc: any) => {
+      const typeMatch = selectedTypes.includes(loc.type);
+      const statusMatch = selectedStatuses.includes(loc.status);
+      return typeMatch && statusMatch;
+    });
+  }, [beneficiaryLocations, selectedTypes, selectedStatuses]);
 
   const donorDataset = useMemo(
     () =>
@@ -334,16 +394,69 @@ export default function DashboardPage() {
           </MapCard>
         );
       case 'semaphoreMap':
+        const beneficiaryPoints = widget.id === 'beneficiaries-map' 
+          ? filteredBeneficiaryLocations.map((loc: any) => ({
+              id: loc.name,
+              label: loc.name,
+              latitude: loc.latitude,
+              longitude: loc.longitude,
+              type: loc.type,
+              status: loc.status,
+              phone: loc.phone,
+              city: loc.city,
+              department: loc.department,
+              riskLevel: loc.riskLevel,
+            }))
+          : [];
         return (
           <MapCard
             key={widget.id as string}
             title={widget.title as string}
             subtitle={widget.subtitle as string}
-            loading={predictiveLoading}
+            loading={widget.id === 'beneficiaries-map' ? beneficiariesLoading : predictiveLoading}
           >
-            <SemaphoreMap points={semaphoreMapData} />
+            <SemaphoreMap 
+              semaphorePoints={semaphoreMapData}
+              beneficiaryPoints={beneficiaryPoints}
+            />
           </MapCard>
         );
+      case 'filter':
+        if (widget.id === 'filter-1') {
+          return (
+            <FilterWidget
+              key={widget.id as string}
+              title={widget.title as string}
+              subtitle={widget.subtitle as string}
+              options={typeFilterOptions}
+              onToggle={(value) => {
+                setSelectedTypes((prev) =>
+                  prev.includes(value)
+                    ? prev.filter((v) => v !== value)
+                    : [...prev, value],
+                );
+              }}
+            />
+          );
+        }
+        if (widget.id === 'filter-2') {
+          return (
+            <FilterWidget
+              key={widget.id as string}
+              title={widget.title as string}
+              subtitle={widget.subtitle as string}
+              options={statusFilterOptions}
+              onToggle={(value) => {
+                setSelectedStatuses((prev) =>
+                  prev.includes(value)
+                    ? prev.filter((v) => v !== value)
+                    : [...prev, value],
+                );
+              }}
+            />
+          );
+        }
+        return null;
       case 'clusterMap':
         return (
           <MapCard

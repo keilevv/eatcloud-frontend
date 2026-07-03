@@ -5,8 +5,8 @@ export const dashboardConfig = [
     description: 'Datos procesados desde EatCloud API',
     widgets: [
       {
-        itemSpacing: 4,  // gap between items within this row
-        rowSpacing: 6,   // margin-bottom below this row
+        itemSpacing: 4, // gap between items within this row
+        rowSpacing: 6, // margin-bottom below this row
         items: [
           {
             id: 'kpi-1',
@@ -17,7 +17,7 @@ export const dashboardConfig = [
             id: 'kpi-2',
             type: 'kpi',
             title: 'Total Kg Cancelados',
-            subtitle: 'Kilogramos en el año 2026'
+            subtitle: 'Kilogramos en el año 2026',
           },
           {
             id: 'kpi-3',
@@ -25,7 +25,7 @@ export const dashboardConfig = [
             title: 'Probabilidad de Cancelación',
             trend: true,
             textColor: 'text-red-500',
-            subtitle: "(Total Canceladas / Total 2026)"
+            subtitle: '(Total Canceladas / Total 2026)',
           },
           {
             id: 'kpi-4',
@@ -35,8 +35,8 @@ export const dashboardConfig = [
         ],
       },
       {
-        itemSpacing: 4,  // gap between charts within this row
-        rowSpacing: 6,   // no extra margin below (last row)
+        itemSpacing: 4, // gap between charts within this row
+        rowSpacing: 6, // no extra margin below (last row)
         items: [
           {
             id: 'chart-1',
@@ -51,8 +51,8 @@ export const dashboardConfig = [
         ],
       },
       {
-        itemSpacing: 4,  // gap between items within this row
-        rowSpacing: 6,   // no extra margin below (last row)
+        itemSpacing: 4, // gap between items within this row
+        rowSpacing: 6, // no extra margin below (last row)
         items: [
           {
             id: 'heatmap1',
@@ -83,15 +83,16 @@ export const dashboardConfig = [
             type: 'clusterMap',
             title: 'Mapa de Puntos de Donación (Volumen KG)',
             mode: 'totalKg',
-          }
-        ]
-      }
+          },
+        ],
+      },
     ],
   },
   {
     id: 'predictive-analysis',
     title: 'Análisis Predictivo de Riesgo',
-    description: 'Probabilidad histórica de cancelación por Punto y por Donante',
+    description:
+      'Probabilidad histórica de cancelación por Punto y por Donante',
     widgets: [
       {
         itemSpacing: 4,
@@ -117,7 +118,7 @@ export const dashboardConfig = [
             title: 'Puntos Excelentes (0% Riesgo)',
             subtitle: 'Con el volumen exigido y 0 cancelaciones',
             textColor: 'text-green-500',
-          }
+          },
         ],
       },
       {
@@ -151,18 +152,40 @@ export const dashboardConfig = [
   },
   {
     id: 'beneficiaries',
-    title: 'Visualización de Beneficiarios Activos',
-    description: 'Ubicación de beneficiarios frente al Mapa de Riesgo',
+    title: 'Visualización de Beneficiarios por Tipología y Estado Operativo',
+    description:
+      'Cruza la ubicación de los beneficiarios según su tipología y estado operativo frente a las zonas de riesgo.',
     widgets: [
       {
         itemSpacing: 4,
         rowSpacing: 6,
         items: [
           {
-            id: 'semaphore-map',
+            id: 'filter-1',
+            type: 'filter',
+            title: 'Filtro por Tipología:',
+            subtitle: 'Seleccione el filtro para ver los beneficiarios',
+            textColor: 'text-blue-500',
+          },
+          {
+            id: 'filter-2',
+            type: 'filter',
+            title: 'Filtro por Estado Operativo',
+            subtitle: 'Seleccione el filtro para ver los beneficiarios',
+            textColor: 'text-blue-500',
+          },
+        ],
+      },
+      {
+        itemSpacing: 4,
+        rowSpacing: 6,
+        items: [
+          {
+            id: 'beneficiaries-map',
             type: 'semaphoreMap',
-            title: 'Mapa de Semáforo',
-            subtitle: '🟢 0-5% | 🟡 6-15% | 🔴 >15% (Puntos)',
+            title: 'Mapa de Beneficiarios',
+            subtitle:
+              '🟢 0-5% | 🟡 6-15% | 🔴 >15% (Riesgo Sucursales) | Capas de Beneficiarios Activables - 🔵 T1 (Bancos) 🟣 T2 (Fundaciones) 🟠 T3 (Otros)',
             textColor: 'text-blue-500',
           },
         ],

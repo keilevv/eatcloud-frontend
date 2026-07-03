@@ -1,36 +1,120 @@
 'use client';
 
-import { Menu, Bell } from 'lucide-react';
+import { useState } from 'react';
+import { LayoutDashboard, Settings, LogOut, Menu, X } from 'lucide-react';
+import Link from 'next/link';
 
+import { useLogout } from '@/features/auth/hooks/useLogout';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { UserMenu } from '@/features/auth/components/UserMenu';
+import logo from '../../../assets/icn-eatcloud.png'
+
+const navigation = [
+  {
+    name: 'Dashboard',
+    href: '/dashboard',
+    icon: LayoutDashboard,
+    current: true,
+  },
+  { name: 'Settings', href: '/settings', icon: Settings, current: false },
+];
 
 export const DashboardHeader = () => {
+  const { logout } = useLogout();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
     <header className="bg-background sticky top-0 z-10 flex h-16 w-full items-center justify-between border-b px-4 shadow-sm md:px-6">
       <div className="flex items-center gap-4">
-        {/* Mobile menu trigger could go here */}
+        <Link
+          href="/"
+          className="text-primary flex items-center gap-2 text-xl font-bold"
+        >
+          <img
+            src={logo.src}
+            alt="EatCloud"
+            className="h-8"
+          />
+        </Link>
+        <nav className="hidden md:flex items-center gap-1">
+          {navigation.map((item) => {
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                  item.current
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                }`}
+                aria-current={item.current ? 'page' : undefined}
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                {item.name}
+              </Link>
+            );
+          })}
+        </nav>
+      </div>
+      <div className="flex items-center gap-2">
         <Button
           variant="ghost"
           size="icon"
           className="md:hidden"
           aria-label="Toggle Menu"
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
         >
-          <Menu className="h-5 w-5" />
-        </Button>
-        <div className="text-muted-foreground hidden text-sm font-medium md:flex">
-          {/* Breadcrumb placeholder */}
-          Dashboard / Overview
-        </div>
-      </div>
-      <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" aria-label="Notifications">
-          <Bell className="h-5 w-5" />
+          {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </Button>
         <ThemeToggle />
         <UserMenu />
+        <button
+          onClick={logout}
+          className="text-muted-foreground hover:bg-muted hover:text-foreground hidden md:flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors"
+        >
+          <LogOut className="h-4 w-4 shrink-0" />
+          Logout
+        </button>
       </div>
+
+      {/* Mobile menu */}
+      {mobileMenuOpen && (
+        <div className="absolute top-16 left-0 right-0 bg-background border-b md:hidden">
+          <nav className="flex flex-col p-4 space-y-2">
+            {navigation.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                    item.current
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  }`}
+                  aria-current={item.current ? 'page' : undefined}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Icon className="h-5 w-5 shrink-0" />
+                  {item.name}
+                </Link>
+              );
+            })}
+            <button
+              onClick={() => {
+                logout();
+                setMobileMenuOpen(false);
+              }}
+              className="text-muted-foreground hover:bg-muted hover:text-foreground flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors"
+            >
+              <LogOut className="h-5 w-5 shrink-0" />
+              Logout
+            </button>
+          </nav>
+        </div>
+      )}
     </header>
   );
 };

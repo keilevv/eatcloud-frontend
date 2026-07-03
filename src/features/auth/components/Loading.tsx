@@ -4,7 +4,7 @@ export const SessionLoading = () => {
       <div className="flex flex-col items-center gap-4">
         <div className="border-primary h-10 w-10 animate-spin rounded-full border-4 border-t-transparent"></div>
         <p className="text-muted-foreground animate-pulse text-sm">
-          Restoring session...
+          Restaurando sesión...
         </p>
       </div>
     </div>

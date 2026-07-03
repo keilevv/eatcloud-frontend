@@ -8,15 +8,22 @@ export interface SemaphorePoint {
   label: string;
   latitude: number;
   longitude: number;
-  value: number;
-  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
-  probability: number;
-  donor: string;
-  category: string;
+  value?: number;
+  riskLevel?: 'LOW' | 'MEDIUM' | 'HIGH';
+  probability?: number;
+  donor?: string;
+  category?: string;
+  // Beneficiary-specific fields
+  phone?: string;
+  status?: string;
+  type?: string;
+  city?: string;
+  department?: string;
 }
 
 interface SemaphoreMapProps {
-  points: SemaphorePoint[];
+  semaphorePoints?: SemaphorePoint[];
+  beneficiaryPoints?: SemaphorePoint[];
   height?: number;
 }
 
@@ -26,12 +33,17 @@ const SemaphoreMapInner = dynamic(
 );
 
 export const SemaphoreMap: React.FC<SemaphoreMapProps> = ({
-  points,
+  semaphorePoints = [],
+  beneficiaryPoints = [],
   height = 420,
 }) => {
   return (
     <div style={{ height }} className="w-full overflow-hidden rounded-lg">
-      <SemaphoreMapInner points={points} height={height} />
+      <SemaphoreMapInner 
+        semaphorePoints={semaphorePoints} 
+        beneficiaryPoints={beneficiaryPoints} 
+        height={height} 
+      />
     </div>
   );
 };

@@ -3,6 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
+import logo from '../../../assets/icn-eatcloud.png';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -54,13 +55,15 @@ export const RegisterForm = () => {
     <Card className="mx-auto w-full max-w-md">
       <CardHeader className="space-y-1 text-center">
         <div className="mb-4 flex justify-center">
-          <div className="bg-primary text-primary-foreground flex h-12 w-12 items-center justify-center rounded-md text-xl font-bold">
-            EC
-          </div>
+          <img
+            src={logo.src}
+            alt="EatCloud"
+            className="h-12"
+          />
         </div>
-        <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
+        <CardTitle className="text-2xl font-bold">Crear una cuenta</CardTitle>
         <CardDescription>
-          Enter your details below to create your account
+          Ingresa tus datos a continuación para crear tu cuenta
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -71,9 +74,9 @@ export const RegisterForm = () => {
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Name</FormLabel>
+                  <FormLabel>Nombre</FormLabel>
                   <FormControl>
-                    <Input placeholder="John Doe" {...field} />
+                    <Input placeholder="Juan Pérez" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -84,9 +87,9 @@ export const RegisterForm = () => {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>Correo electrónico</FormLabel>
                   <FormControl>
-                    <Input placeholder="name@example.com" {...field} />
+                    <Input placeholder="nombre@ejemplo.com" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -97,7 +100,7 @@ export const RegisterForm = () => {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Password</FormLabel>
+                  <FormLabel>Contraseña</FormLabel>
                   <FormControl>
                     <Input type="password" placeholder="••••••••" {...field} />
                   </FormControl>
@@ -110,7 +113,7 @@ export const RegisterForm = () => {
               name="confirmPassword"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Confirm Password</FormLabel>
+                  <FormLabel>Confirmar contraseña</FormLabel>
                   <FormControl>
                     <Input type="password" placeholder="••••••••" {...field} />
                   </FormControl>
@@ -129,17 +132,17 @@ export const RegisterForm = () => {
               {isLoading ? (
                 <div className="flex items-center gap-2">
                   <div className="border-background h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"></div>
-                  Creating account...
+                  Creando cuenta...
                 </div>
               ) : (
-                'Sign Up'
+                'Registrarse'
               )}
             </Button>
 
             <div className="text-muted-foreground mt-4 text-center text-sm">
-              Already have an account?{' '}
+              ¿Ya tienes una cuenta?{' '}
               <Link href="/login" className="text-primary hover:underline">
-                Sign In
+                Iniciar Sesión
               </Link>
             </div>
           </form>

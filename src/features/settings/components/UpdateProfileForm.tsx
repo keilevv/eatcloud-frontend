@@ -1,7 +1,6 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import Link from 'next/link';
 import { useForm as useRHForm } from 'react-hook-form';
 import logo from '../../../assets/icn-eatcloud.png';
 
@@ -23,22 +22,23 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 
-import { useLogin } from '../hooks/useLogin';
-import { loginSchema, LoginFormData } from '../schemas/login.schema';
+import { useUpdateProfile } from '../hooks/useUpdateProfile';
+import { updateProfileSchema, UpdateProfileFormData } from '../schemas/updateProfile.schema';
 
-export const LoginForm = () => {
-  const { login, isLoading, error } = useLogin();
+export const UpdateProfileForm = () => {
+  const { updateProfile, isLoading, error, success } = useUpdateProfile();
 
-  const form = useRHForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
+  const form = useRHForm<UpdateProfileFormData>({
+    resolver: zodResolver(updateProfileSchema),
     defaultValues: {
+      name: '',
       email: '',
       password: '',
     },
   });
 
-  const onSubmit = async (data: LoginFormData) => {
-    await login(data);
+  const onSubmit = async (data: UpdateProfileFormData) => {
+    await updateProfile(data);
   };
 
   return (
@@ -51,9 +51,9 @@ export const LoginForm = () => {
             className="h-12"
           />
         </div>
-        <CardTitle className="text-2xl font-bold">Bienvenido de nuevo</CardTitle>
+        <CardTitle className="text-2xl font-bold">Actualizar Perfil</CardTitle>
         <CardDescription>
-          Ingresa tus credenciales para acceder a tu cuenta
+          Actualiza la información de tu cuenta
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -61,12 +61,25 @@ export const LoginForm = () => {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nombre</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Tu nombre" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
               name="email"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Correo electrónico</FormLabel>
                   <FormControl>
-                    <Input placeholder="nombre@ejemplo.com" {...field} />
+                    <Input type="email" placeholder="nombre@ejemplo.com" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -77,17 +90,7 @@ export const LoginForm = () => {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <div className="flex items-center justify-between">
-                    <FormLabel>Contraseña</FormLabel>
-                    {/* Forgot password placeholder */}
-                    <a
-                      href="#"
-                      className="text-primary text-sm hover:underline"
-                      tabIndex={-1}
-                    >
-                      ¿Olvidaste tu contraseña?
-                    </a>
-                  </div>
+                  <FormLabel>Nueva contraseña (opcional)</FormLabel>
                   <FormControl>
                     <Input type="password" placeholder="••••••••" {...field} />
                   </FormControl>
@@ -102,23 +105,22 @@ export const LoginForm = () => {
               </div>
             )}
 
+            {success && (
+              <div className="text-green-600 bg-green-50 rounded-md p-3 text-sm">
+                Perfil actualizado exitosamente
+              </div>
+            )}
+
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? (
                 <div className="flex items-center gap-2">
                   <div className="border-background h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"></div>
-                  Iniciando sesión...
+                  Actualizando...
                 </div>
               ) : (
-                'Iniciar Sesión'
+                'Actualizar Perfil'
               )}
             </Button>
-
-            <div className="text-muted-foreground mt-4 text-center text-sm">
-              ¿No tienes una cuenta?{' '}
-              <Link href="/register" className="text-primary hover:underline">
-                Regístrate
-              </Link>
-            </div>
           </form>
         </Form>
       </CardContent>
