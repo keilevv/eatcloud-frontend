@@ -14,6 +14,7 @@ import {
   MapPoint,
 } from '@/features/dashboard/charts/components/HeatMapChart';
 import { ScatterChart } from '@/features/dashboard/charts/components/ScatterChart';
+import { SemaphoreMap } from '@/features/dashboard/charts/components/SemaphoreMap';
 import { ChartConfig } from '@/features/dashboard/charts/types/ChartConfig';
 import { dashboardConfig } from '@/features/dashboard/config/dashboard.config';
 import { useCancellationAnalysis } from '@/features/dashboard/hooks/useCancellationAnalysis';
@@ -28,16 +29,22 @@ import { LazySection } from '@/features/dashboard/widgets/LazySection';
 import { KpiCard } from '@/features/dashboard/widgets/KpiCard';
 import { MapCard } from '@/features/dashboard/widgets/MapCard';
 import { formatNumber } from '@/utils';
-import { DashboardSection  } from '@/features/dashboard/widgets/DashboardSection';
+import { DashboardSection } from '@/features/dashboard/widgets/DashboardSection';
 
 const CHART_SINGLE_COL_BREAKPOINT = 1000;
 
 export default function DashboardPage() {
   const [filters] = [{} as DashboardFilters];
-  const { data: cancellationData, isLoading: cancellationLoading, error: cancellationError } =
-    useCancellationAnalysis(filters);
-  const { data: predictiveData, isLoading: predictiveLoading, error: predictiveError } =
-    usePredictiveAnalysis(filters);
+  const {
+    data: cancellationData,
+    isLoading: cancellationLoading,
+    error: cancellationError,
+  } = useCancellationAnalysis(filters);
+  const {
+    data: predictiveData,
+    isLoading: predictiveLoading,
+    error: predictiveError,
+  } = usePredictiveAnalysis(filters);
   const windowWidth = useWindowWidth();
 
   const donorDataset = useMemo(
@@ -95,13 +102,11 @@ export default function DashboardPage() {
     () =>
       predictiveData?.topRiskDonors
         ? RiskDonorAdapter(
-            predictiveData.topRiskDonors.map(
-              (rd: Record<string, unknown>) => ({
-                id: rd.donor as string,
-                name: rd.donor as string,
-                riskPercentage: Number(rd.probability) * 100,
-              }),
-            ),
+            predictiveData.topRiskDonors.map((rd: Record<string, unknown>) => ({
+              id: rd.donor as string,
+              name: rd.donor as string,
+              riskPercentage: Number(rd.probability) * 100,
+            })),
             15,
           )
         : { series: [], xAxisLabel: undefined, yAxisLabel: undefined },
@@ -128,19 +133,22 @@ export default function DashboardPage() {
     () =>
       predictiveData?.scatterPlot
         ? ScatterAdapter(
-            predictiveData.scatterPlot.map(
-              (sp: Record<string, unknown>) => ({
-                id: sp.name as string,
-                name: sp.name as string,
-                announcements: sp.announcements as number,
-                cancellationProbability: Math.round(
-                  Number(sp.cancellationProbability) * 100,
-                ),
-                donor: sp.donor as string,
-              }),
-            ),
+            predictiveData.scatterPlot.map((sp: Record<string, unknown>) => ({
+              id: sp.name as string,
+              name: sp.name as string,
+              announcements: sp.announcements as number,
+              cancellationProbability: Math.round(
+                Number(sp.cancellationProbability) * 100,
+              ),
+              donor: sp.donor as string,
+            })),
           )
         : { series: [], xAxisLabel: undefined, yAxisLabel: undefined },
+    [predictiveData],
+  );
+
+  const semaphoreMapData = useMemo(
+    () => (predictiveData?.semaphoreMap ? predictiveData.semaphoreMap : []),
     [predictiveData],
   );
 
@@ -257,7 +265,10 @@ export default function DashboardPage() {
           >
             <BarChart
               dataset={getDataset(widget.id as string)}
-              config={{ ...getChartConfig(widget.id as string), ...(typedWidget.config as ChartConfig) }}
+              config={{
+                ...getChartConfig(widget.id as string),
+                ...(typedWidget.config as ChartConfig),
+              }}
               loading={isLoading}
               error={!!error}
               minWidth={250}
@@ -274,7 +285,10 @@ export default function DashboardPage() {
           >
             <BarChart
               dataset={getDataset(widget.id as string)}
-              config={{ ...getChartConfig(widget.id as string), ...(typedWidget.config as ChartConfig) }}
+              config={{
+                ...getChartConfig(widget.id as string),
+                ...(typedWidget.config as ChartConfig),
+              }}
               loading={isLoading}
               error={!!error}
               minWidth={250}
@@ -290,8 +304,17 @@ export default function DashboardPage() {
             subtitle={typedWidget.subtitle as string}
           >
             <ScatterChart
-              dataset={scatterDataset && typeof scatterDataset === 'object' && 'series' in scatterDataset ? scatterDataset.series : scatterDataset}
-              config={{ ...getChartConfig(widget.id as string), ...(typedWidget.config as ChartConfig) }}
+              dataset={
+                scatterDataset &&
+                typeof scatterDataset === 'object' &&
+                'series' in scatterDataset
+                  ? scatterDataset.series
+                  : scatterDataset
+              }
+              config={{
+                ...getChartConfig(widget.id as string),
+                ...(typedWidget.config as ChartConfig),
+              }}
               loading={predictiveLoading}
               error={!!predictiveError}
             />
@@ -306,10 +329,19 @@ export default function DashboardPage() {
           >
             <HeatMapChart
               points={rawMapPoints}
-              mode={
-                (typedWidget.mode as 'quantity' | 'totalKg') ?? 'quantity'
-              }
+              mode={(typedWidget.mode as 'quantity' | 'totalKg') ?? 'quantity'}
             />
+          </MapCard>
+        );
+      case 'semaphoreMap':
+        return (
+          <MapCard
+            key={widget.id as string}
+            title={widget.title as string}
+            subtitle={widget.subtitle as string}
+            loading={predictiveLoading}
+          >
+            <SemaphoreMap points={semaphoreMapData} />
           </MapCard>
         );
       case 'clusterMap':
@@ -321,9 +353,7 @@ export default function DashboardPage() {
           >
             <ClusterMarkerMap
               points={rawMapPoints}
-              mode={
-                (typedWidget.mode as 'quantity' | 'totalKg') ?? 'quantity'
-              }
+              mode={(typedWidget.mode as 'quantity' | 'totalKg') ?? 'quantity'}
             />
           </MapCard>
         );
@@ -392,30 +422,12 @@ export default function DashboardPage() {
             const sectionKey = section.id;
             const sectionConfig = section;
 
-            if (sectionKey === 'predictive-analysis') {
-              return (
-                <LazySection
-                  key={sectionKey}
-                  title={sectionConfig.title}
-                  description={sectionConfig.description}
-                  placeholderHeight={200}
-                >
-                  {renderGrid(
-                    sectionConfig.widgets as {
-                      itemSpacing?: number;
-                      rowSpacing?: number;
-                      items: Record<string, unknown>[];
-                    }[],
-                  )}
-                </LazySection>
-              );
-            }
-
             return (
-              <DashboardSection
+              <LazySection
                 key={sectionKey}
                 title={sectionConfig.title}
                 description={sectionConfig.description}
+                placeholderHeight={200}
               >
                 {renderGrid(
                   sectionConfig.widgets as {
@@ -424,7 +436,7 @@ export default function DashboardPage() {
                     items: Record<string, unknown>[];
                   }[],
                 )}
-              </DashboardSection>
+              </LazySection>
             );
           })}
         </DashboardContent>

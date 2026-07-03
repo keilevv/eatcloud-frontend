@@ -7,9 +7,10 @@ interface MapCardProps {
   loading?: boolean;
   error?: boolean;
   children?: React.ReactNode; // For future Leaflet maps
+  subtitle?: string;
 }
 
-export const MapCard = ({ title, loading, error, children }: MapCardProps) => {
+export const MapCard = ({ title, loading, error, children, subtitle }: MapCardProps) => {
   if (loading) {
     return (
       <DashboardWidget className="h-[500px] animate-pulse">
@@ -30,7 +31,7 @@ export const MapCard = ({ title, loading, error, children }: MapCardProps) => {
   }
 
   return (
-    <DashboardWidget title={title} className="min-h-[500px]">
+    <DashboardWidget title={title} description={subtitle} className="min-h-[500px]">
       {children || (
         <div className="text-muted-foreground bg-muted/20 flex h-full min-h-[400px] items-center justify-center rounded-lg border-2 border-dashed text-sm">
           Map Placeholder

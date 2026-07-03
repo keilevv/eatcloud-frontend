@@ -149,4 +149,24 @@ export const dashboardConfig = [
       },
     ],
   },
+  {
+    id: 'beneficiaries',
+    title: 'Visualización de Beneficiarios Activos',
+    description: 'Ubicación de beneficiarios frente al Mapa de Riesgo',
+    widgets: [
+      {
+        itemSpacing: 4,
+        rowSpacing: 6,
+        items: [
+          {
+            id: 'semaphore-map',
+            type: 'semaphoreMap',
+            title: 'Mapa de Semáforo',
+            subtitle: '🟢 0-5% | 🟡 6-15% | 🔴 >15% (Puntos)',
+            textColor: 'text-blue-500',
+          },
+        ],
+      },
+    ],
+  },
 ];
