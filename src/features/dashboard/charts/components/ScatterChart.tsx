@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { VictoryAxis, VictoryLegend, VictoryScatter } from 'victory';
 
 import { ChartProps } from '../types/ChartProps';
@@ -10,8 +10,10 @@ import { createChartTooltip } from './ChartTooltip';
 import { ChartContainer } from './ChartContainer';
 import { formatAxis } from '../utils/formatAxis';
 import { formatLabels } from '../utils/formatLabels';
+import { scatterTooltipFormatter } from '../adapters/ScatterAdapter';
 
 const X_LABEL_HIDE_THRESHOLD = 450;
+const MAX_SCATTER_POINTS = 200;
 
 function niceStep(maxVal: number): number {
   const rough = maxVal / 5;
@@ -32,11 +34,55 @@ function niceTicks(maxVal: number): number[] {
   return ticks;
 }
 
-function normalizeDualAxis(dataset: ChartSeries[]): {
+function downsampleArray<T>(arr: T[], max: number): T[] {
+  if (arr.length <= max) return arr;
+  
+  // Find edge points (min and max x values)
+  const getX = (item: T) => (item as any).x;
+  let minXIndex = 0;
+  let maxXIndex = 0;
+  
+  for (let i = 1; i < arr.length; i++) {
+    if (getX(arr[i]) < getX(arr[minXIndex])) {
+      minXIndex = i;
+    }
+    if (getX(arr[i]) > getX(arr[maxXIndex])) {
+      maxXIndex = i;
+    }
+  }
+  
+  // Always include edge points
+  const edgeIndices = new Set([minXIndex, maxXIndex]);
+  const result: T[] = [arr[minXIndex], arr[maxXIndex]];
+  
+  // Calculate how many elements we can sample in between
+  const remainingSlots = max - 2;
+  if (remainingSlots <= 0) return result;
+  
+  // Create array of indices excluding edge points
+  const middleIndices: number[] = [];
+  for (let i = 0; i < arr.length; i++) {
+    if (!edgeIndices.has(i)) {
+      middleIndices.push(i);
+    }
+  }
+  
+  // Sample evenly from middle elements
+  const stride = Math.ceil(middleIndices.length / remainingSlots);
+  for (let i = 0; i < middleIndices.length; i += stride) {
+    result.push(arr[middleIndices[i]]);
+  }
+  
+  return result;
+}
+
+interface NormalizedResult {
   normalizedDataset: ChartSeries[];
   scaleRatio: number;
   rightAxisTicks: number[];
-} {
+}
+
+function normalizeDualAxis(dataset: ChartSeries[]): NormalizedResult {
   const firstSeries = dataset[0];
   const secondSeries = dataset[1];
 
@@ -63,7 +109,7 @@ function normalizeDualAxis(dataset: ChartSeries[]): {
 const getColor = (series: ChartSeries, index: number) =>
   series.color ?? chartThemeConfig.colors[index % chartThemeConfig.colors.length];
 
-export const ScatterChart: React.FC<ChartProps> = ({
+const ScatterChartInner: React.FC<ChartProps> = ({
   title,
   subtitle,
   dataset,
@@ -72,7 +118,6 @@ export const ScatterChart: React.FC<ChartProps> = ({
   emptyMessage,
   config,
   height,
-  minWidth,
 }) => {
   const isEmpty =
     !dataset ||
@@ -81,18 +126,24 @@ export const ScatterChart: React.FC<ChartProps> = ({
 
   const isDualAxis = !!dataset && dataset.length === 2;
 
-  const defaultMinWidth =
-    dataset && dataset[0]?.data.length > 10 ? 800 : undefined;
-  const finalMinWidth = minWidth || defaultMinWidth;
+  const downsampledDataset = useMemo(() => {
+    if (!dataset) return dataset;
+    return dataset.map((series) => ({
+      ...series,
+      data: downsampleArray(series.data, MAX_SCATTER_POINTS),
+    }));
+  }, [dataset]);
 
-  const { normalizedDataset, scaleRatio, rightAxisTicks } =
-    isDualAxis && !isEmpty
-      ? normalizeDualAxis(dataset)
-      : {
-          normalizedDataset: dataset ?? [],
-          scaleRatio: 1,
-          rightAxisTicks: [],
-        };
+  const { normalizedDataset, scaleRatio, rightAxisTicks } = useMemo(() => {
+    if (isDualAxis && !isEmpty && downsampledDataset) {
+      return normalizeDualAxis(downsampledDataset);
+    }
+    return {
+      normalizedDataset: downsampledDataset ?? [],
+      scaleRatio: 1,
+      rightAxisTicks: [],
+    };
+  }, [isDualAxis, isEmpty, downsampledDataset]);
 
   return (
     <ChartContainer
@@ -103,51 +154,42 @@ export const ScatterChart: React.FC<ChartProps> = ({
       empty={isEmpty}
       emptyMessage={emptyMessage}
       height={height}
-      minWidth={finalMinWidth}
     >
       {({ width, height }) => {
-        const effectiveWidth = finalMinWidth
-          ? Math.max(width, finalMinWidth)
-          : width;
-        const hideXLabels = effectiveWidth < X_LABEL_HIDE_THRESHOLD;
+        const hideXLabels = width < X_LABEL_HIDE_THRESHOLD;
 
         const chartPadding = {
           top: 40,
-          bottom: 100,
-          left: 60,
+          bottom: 80,
+          left: 100,
           right: isDualAxis ? 55 : 30,
         };
 
-        const legendData = dataset
-          ? dataset.map((series, index) => ({
-              name: series.name,
-              symbol: {
-                fill: getColor(series, index),
-              },
-            }))
-          : [];
+        const legendData = normalizedDataset.map((series, index) => ({
+          name: series.name,
+          symbol: { fill: getColor(series, index) },
+        }));
 
         return (
           <VictoryChartWrapper
             width={width}
             height={height}
-            domainPadding={{ x: 20, y: 20 }}
+            domainPadding={{ x: 100, y: 20 }}
             padding={{
               ...chartPadding,
               bottom: hideXLabels ? 50 : chartPadding.bottom,
             }}
-            minWidth={finalMinWidth}
           >
-            {config?.showLegend !== false && dataset && dataset.length > 1 && (
-              <VictoryLegend
-                x={effectiveWidth / 2 - 120}
-                y={10}
-                centerTitle
-                orientation="horizontal"
-                gutter={20}
-                data={legendData}
-              />
-            )}
+            {config?.showLegend !== false && normalizedDataset && (
+                <VictoryLegend
+                  x={width / 2 - (legendData.length * 60)}
+                  y={10}
+                  centerTitle
+                  orientation="horizontal"
+                  gutter={20}
+                  data={legendData}
+                />
+              )}
 
             <VictoryAxis
               key="axis-x"
@@ -166,7 +208,7 @@ export const ScatterChart: React.FC<ChartProps> = ({
                       padding: 15,
                       fontSize: 16,
                     },
-                axisLabel: { padding: 40 },
+                axisLabel: { padding: 60 },
               }}
             />
 
@@ -177,7 +219,7 @@ export const ScatterChart: React.FC<ChartProps> = ({
               label={config?.yAxisLabel}
               style={{
                 tickLabels: { fontSize: 12 },
-                axisLabel: { padding: 40 },
+                axisLabel: { padding: 70 },
               }}
             />
 
@@ -224,12 +266,10 @@ export const ScatterChart: React.FC<ChartProps> = ({
                           return Number(datum.y) * scaleRatio;
                         }
                       : undefined,
+                    seriesName: series.name,
+                    customFormatter: scatterTooltipFormatter,
                   })}
                   labels={() => ''}
-                  animate={{
-                    duration: 500,
-                    onLoad: { duration: 500 },
-                  }}
                 />
               );
             })}
@@ -239,3 +279,5 @@ export const ScatterChart: React.FC<ChartProps> = ({
     </ChartContainer>
   );
 };
+
+export const ScatterChart = React.memo(ScatterChartInner);

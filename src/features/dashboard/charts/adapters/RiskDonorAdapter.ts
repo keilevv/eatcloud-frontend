@@ -1,5 +1,5 @@
 import { ChartPoint } from '../types/ChartPoint';
-import { ChartSeries } from '../types/ChartSeries';
+import { ChartAdapterResult } from '../types/ChartSeries';
 import { buildSeries } from '../utils/buildSeries';
 import { sortSeriesDesc } from '../utils/sortSeries';
 
@@ -12,7 +12,7 @@ export interface RiskDonorDTO {
 export const RiskDonorAdapter = (
   dtoData: RiskDonorDTO[],
   limit: number = 15,
-): ChartSeries<RiskDonorDTO>[] => {
+): ChartAdapterResult<RiskDonorDTO> => {
 
   const points: ChartPoint<RiskDonorDTO>[] = dtoData.map((item) => ({
     x: item.name,
@@ -22,5 +22,10 @@ export const RiskDonorAdapter = (
   }));
 
   const sorted = sortSeriesDesc(points).slice(0, limit);
-  return [{ ...buildSeries('risk-donors', 'Risk Donors', sorted), type: 'bar', color: '#F97316' }];
+  return {
+    series: [{ ...buildSeries('risk-donors', 'Top 10 Donantes Riesgosos', sorted), type: 'bar', color: '#F97316' }],
+    xAxisLabel: 'Donante',
+    yAxisLabel: 'Porcentaje de Riesgo',
+    yAxisFormat: 'percentage',
+  };
 };

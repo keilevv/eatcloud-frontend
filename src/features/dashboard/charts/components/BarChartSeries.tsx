@@ -42,7 +42,7 @@ export function renderBarChartSeries({
           data={series.data}
           horizontal={horizontal}
           style={{ data: { fill: color } }}
-          labelComponent={createChartTooltip({ color, tooltipFormat })}
+          labelComponent={createChartTooltip({ color, tooltipFormat, seriesName: series.name })}
           labels={() => ''}
           animate={{ duration: 500, onLoad: { duration: 500 } }}
         />,
@@ -61,7 +61,7 @@ export function renderBarChartSeries({
           data={series.data}
           style={{ data: { stroke: color, strokeWidth: 3 } }}
           animate={{ duration: 500, onLoad: { duration: 500 } }}
-          labelComponent={createChartTooltip({ color, tooltipFormat })}
+          labelComponent={createChartTooltip({ color, tooltipFormat, seriesName: series.name })}
           labels={() => ''}
         />,
       );
@@ -98,6 +98,7 @@ export function renderBarChartSeries({
             color,
             tooltipFormat,
             valueGetter: lineValueGetter,
+            seriesName: series.name,
           })}
           labels={() => ''}
           animate={{ duration: 500, onLoad: { duration: 500 } }}

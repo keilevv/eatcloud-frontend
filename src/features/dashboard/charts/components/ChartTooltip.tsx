@@ -14,6 +14,10 @@ export interface ChartTooltipOptions {
    * to extract the *real* display value from the raw datum instead of datum.y
    */
   valueGetter?: (datum: any) => number;
+  /** Series name to display in tooltip */
+  seriesName?: string;
+  /** Custom formatter for tooltip text */
+  customFormatter?: (datum: any) => string[];
 }
 
 /**
@@ -21,12 +25,14 @@ export interface ChartTooltipOptions {
  * `labelComponent` to any Victory series component.
  *
  * Usage:
- *   labelComponent={createChartTooltip({ color, tooltipFormat })}
+ *   labelComponent={createChartTooltip({ color, tooltipFormat, seriesName })}
  */
 export function createChartTooltip({
   color,
   tooltipFormat,
   valueGetter,
+  seriesName,
+  customFormatter,
 }: ChartTooltipOptions = {}): React.ReactElement {
   return (
     <VictoryTooltip
@@ -44,9 +50,13 @@ export function createChartTooltip({
         fontFamily: chartThemeConfig.typography.fontFamily,
       }}
       text={({ datum }) => {
+        if (customFormatter) {
+          return customFormatter(datum);
+        }
+
         const xVal = typeof datum.xName !== 'undefined' ? datum.xName : datum.label;
         const yVal = valueGetter ? valueGetter(datum) : datum.y;
-        return formatTooltip(xVal, yVal, tooltipFormat as any);
+        return formatTooltip(xVal, yVal, tooltipFormat as any, seriesName) as any;
       }}
     />
   );

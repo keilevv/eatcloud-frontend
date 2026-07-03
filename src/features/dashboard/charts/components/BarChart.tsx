@@ -96,7 +96,11 @@ export const BarChart: React.FC<ChartProps> = ({
   const { normalizedDataset, lineScaleRatio, rightAxisTicks } =
     isDualAxis && !isEmpty
       ? normalizeDualAxis(dataset)
-      : { normalizedDataset: dataset ?? [], lineScaleRatio: 1, rightAxisTicks: [] };
+      : {
+          normalizedDataset: dataset ?? [],
+          lineScaleRatio: 1,
+          rightAxisTicks: [],
+        };
 
   return (
     <ChartContainer
@@ -114,7 +118,8 @@ export const BarChart: React.FC<ChartProps> = ({
           ? Math.max(width, finalMinWidth)
           : width;
         const hideXLabels = effectiveWidth < X_LABEL_HIDE_THRESHOLD;
-        const hideCategoryLabels = horizontal && effectiveWidth < X_LABEL_HIDE_THRESHOLD;
+        const hideCategoryLabels =
+          horizontal && effectiveWidth < X_LABEL_HIDE_THRESHOLD;
 
         const chartPadding = horizontal
           ? {
@@ -124,8 +129,8 @@ export const BarChart: React.FC<ChartProps> = ({
           : {
               top: 40,
               bottom: 100,
-              left: 60,
-              right: isDualAxis ? 55 : 30,
+              left: 70,
+              right: isDualAxis ? 90 : 20,
             };
 
         const legendData = dataset
@@ -146,7 +151,10 @@ export const BarChart: React.FC<ChartProps> = ({
             width={width}
             height={height}
             horizontal={horizontal}
-            domainPadding={horizontal ? { x: 20 } : { x: 20, y: 20 }}
+            domainPadding={{
+              x: 20,
+              y: 20,
+            }}
             padding={
               horizontal
                 ? chartPadding
@@ -158,9 +166,9 @@ export const BarChart: React.FC<ChartProps> = ({
             minWidth={finalMinWidth}
           >
             {/* Legend */}
-            {config?.showLegend !== false && dataset && dataset.length > 1 && (
+            {config?.showLegend !== false && dataset && (
               <VictoryLegend
-                x={effectiveWidth / 2 - 120}
+                x={effectiveWidth / 2 - legendData.length * 60}
                 y={10}
                 centerTitle
                 orientation="horizontal"

@@ -4,7 +4,11 @@ export const formatTooltip = (
   label: string,
   value: number,
   format?: 'number' | 'thousands' | 'percentage' | 'kilograms' | 'amount' | 'none',
-): string => {
+  seriesName?: string,
+): string[] => {
   const formattedValue = formatAxis(value, format);
-  return `${label}\n${formattedValue}`;
+  if (seriesName) {
+    return [seriesName, `${label}: ${formattedValue}`];
+  }
+  return [label, formattedValue];
 };

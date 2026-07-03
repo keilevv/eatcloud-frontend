@@ -34,18 +34,28 @@ export function renderBarChartAxes({
     <VictoryAxis
       key="axis-x"
       orientation={horizontal ? 'left' : undefined}
-      tickFormat={horizontal && hideCategoryLabels ? () => '' : hideXLabels ? () => '' : (t: any) => formatLabels(String(t))}
-      label={horizontal ? config?.yAxisLabel : config?.xAxisLabel}
+      tickFormat={
+        horizontal && hideCategoryLabels
+          ? () => ''
+          : hideXLabels
+            ? () => ''
+            : (t: any) => formatLabels(String(t))
+      }
+      label={config?.xAxisLabel}
       style={{
-        tickLabels: hideXLabels || (horizontal && hideCategoryLabels)
-          ? { opacity: 0 }
-          : {
-              angle: horizontal ? 0 : -45,
-              textAnchor: 'end',
-              padding: horizontal ? 8 : 15,
-              fontSize: horizontal ? 12 : 16,
-            },
-        axisLabel: { padding: 40 },
+        tickLabels:
+          hideXLabels || (horizontal && hideCategoryLabels)
+            ? { opacity: 0 }
+            : {
+                angle: horizontal ? 0 : -45,
+                textAnchor: 'end',
+                padding: horizontal ? 8 : 15,
+                fontSize: horizontal ? 12 : 16,
+              },
+        axisLabel: {
+          padding: horizontal ? 20 : 20,
+          opacity: hideXLabels || (horizontal && hideCategoryLabels) ? 100 : 0,
+        },
       }}
     />,
 
@@ -55,10 +65,10 @@ export function renderBarChartAxes({
       dependentAxis
       orientation={horizontal ? 'bottom' : 'left'}
       tickFormat={(t: any) => formatAxis(t, config?.yAxisFormat)}
-      label={horizontal ? config?.xAxisLabel : config?.yAxisLabel}
+      label={config?.yAxisLabel}
       style={{
         tickLabels: { fontSize: 12 },
-        axisLabel: { padding: 40 },
+        axisLabel: { padding: horizontal ? 40 : 50 },
       }}
     />,
   ];
@@ -72,10 +82,16 @@ export function renderBarChartAxes({
         orientation={horizontal ? 'top' : 'right'}
         tickValues={rightAxisTicks}
         tickFormat={(t: any) =>
-          formatAxis(Number(t) * lineScaleRatio, config?.yAxisFormat)
+          formatAxis(
+            Number(t) * lineScaleRatio,
+            config?.y2AxisFormat || config?.yAxisFormat,
+          )
         }
+        label={config?.y2AxisLabel}
         style={{
           tickLabels: { fill: '#9ca3af', fontSize: 12 },
+          axisLabel: { padding: 70 },
+          grid: { stroke: 'none' },
         }}
       />,
     );

@@ -8,14 +8,14 @@ export const formatAxis = (
   if (format === 'none') return String(value);
 
   if (format === 'percentage') {
-    return `${value.toFixed(1)}%`;
+    return `${value}%`;
   }
 
   if (format === 'kilograms') {
     if (value >= 1000) {
-      return `${(value / 1000).toFixed(1)}K kg`;
+      return `${formatNumber(value / 1000)}K kg`;
     }
-    return `${value} kg`;
+    return `${formatNumber(value)} kg`;
   }
 
   if (format === 'thousands' || !format) {
