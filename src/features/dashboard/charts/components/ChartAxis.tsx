@@ -26,7 +26,7 @@ export const ChartAxis: React.FC<ChartAxisProps> = ({
     <VictoryAxis
       {...props}
       dependentAxis={dependentAxis}
-      tickFormat={(t) => {
+      tickFormat={(t: any) => {
         if (props.tickFormat) {
           return props.tickFormat(t);
         }
