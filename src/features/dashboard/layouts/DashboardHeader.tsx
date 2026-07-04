@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { LayoutDashboard, Menu, X } from 'lucide-react';
 import Link from 'next/link';
 
-import { ThemeToggle } from '@/components/common/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { UserMenu } from '@/features/auth/components/UserMenu';
 import logo from '../../../assets/icn-eatcloud.png';
@@ -65,7 +64,6 @@ export const DashboardHeader = () => {
             <Menu className="h-5 w-5" />
           )}
         </Button>
-        <ThemeToggle />
         <UserMenu />
       </div>
 

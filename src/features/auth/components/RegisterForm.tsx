@@ -128,7 +128,7 @@ export const RegisterForm = () => {
               </div>
             )}
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full bg-sky-500 hover:bg-sky-600 text-white" disabled={isLoading}>
               {isLoading ? (
                 <div className="flex items-center gap-2">
                   <div className="border-background h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"></div>
