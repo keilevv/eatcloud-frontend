@@ -21,6 +21,7 @@ export const metadata: Metadata = {
     template: `%s | ${APP_METADATA.name}`,
   },
   description: APP_METADATA.description,
+  icons: [{ rel: 'icon', url: '/favicon.png' }],
 };
 
 export const viewport: Viewport = {
