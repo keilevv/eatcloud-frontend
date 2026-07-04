@@ -24,6 +24,14 @@ import { useWindowWidth } from '@/features/dashboard/hooks/useWindowWidth';
 import { DashboardContent } from '@/features/dashboard/layouts/DashboardContent';
 import { DashboardLayout } from '@/features/dashboard/layouts/DashboardLayout';
 import { DashboardFilters } from '@/features/dashboard/services/dashboard.service';
+import { Card } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { ChartCard } from '@/features/dashboard/widgets/ChartCard';
 import { DashboardGrid } from '@/features/dashboard/widgets/DashboardGrid';
 import { LazySection } from '@/features/dashboard/widgets/LazySection';
@@ -36,7 +44,10 @@ import { formatNumber } from '@/utils';
 const CHART_SINGLE_COL_BREAKPOINT = 1000;
 
 export default function DashboardPage() {
-  const [filters] = [{} as DashboardFilters];
+  const [selectedDonor, setSelectedDonor] = useState<string>('all');
+  const filters = useMemo((): DashboardFilters => {
+    return selectedDonor !== 'all' ? { donor: selectedDonor } : {};
+  }, [selectedDonor]);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const {
@@ -96,6 +107,30 @@ export default function DashboardPage() {
       }
     }
   }, [beneficiariesData]);
+
+  // Capture full donor list when unfiltered data first loads (preserved even after backend filtering)
+  const [allDonors, setAllDonors] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (cancellationData?.donorsChart && allDonors.length === 0) {
+      const donors = [
+        ...new Set(
+          cancellationData.donorsChart.map(
+            (d: Record<string, unknown>) => d.donor as string,
+          ),
+        ),
+      ] as string[];
+      if (donors.length > 0) setAllDonors(donors);
+    }
+  }, [cancellationData, allDonors.length]);
+
+  const donorOptions = useMemo(() => {
+    if (allDonors.length === 0) return [];
+    return [
+      { label: 'Todos los donantes', value: 'all' },
+      ...allDonors.map((d) => ({ label: d, value: d })),
+    ];
+  }, [allDonors]);
 
   // Filter beneficiary locations based on selected filters
   const filteredBeneficiaryLocations = useMemo(() => {
@@ -491,6 +526,37 @@ export default function DashboardPage() {
           );
         }
         return null;
+      case 'select':
+        if (widget.id === 'donor-filter') {
+          return (
+            <Card key={widget.id as string} className="p-4">
+              <div className="mb-2">
+                <h3 className="font-semibold text-sm">
+                  {widget.title as string}
+                </h3>
+                <p className="text-muted-foreground text-xs">
+                  {widget.subtitle as string}
+                </p>
+              </div>
+              <Select
+                value={selectedDonor}
+                onValueChange={setSelectedDonor}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {donorOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Card>
+          );
+        }
+        return null;
       case 'clusterMap':
         return (
           <MapCard
@@ -575,7 +641,7 @@ export default function DashboardPage() {
           items: Record<string, unknown>[];
         }[],
       ),
-    [cancellationData, cancellationLoading, cancellationError, rawMapPoints, isLoading, error, windowWidth],
+    [cancellationData, cancellationLoading, cancellationError, rawMapPoints, isLoading, error, windowWidth, selectedDonor, donorOptions],
   );
 
   const predictiveSection = useMemo(

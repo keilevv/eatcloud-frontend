@@ -5,6 +5,18 @@ export const dashboardConfig = [
     description: 'Datos procesados desde EatCloud API',
     widgets: [
       {
+        itemSpacing: 4,
+        rowSpacing: 4,
+        items: [
+          {
+            id: 'donor-filter',
+            type: 'select',
+            title: 'Filtrar por Donante:',
+            subtitle: 'Seleccione un donante para filtrar los datos',
+          },
+        ],
+      },
+      {
         itemSpacing: 4, // gap between items within this row
         rowSpacing: 6, // margin-bottom below this row
         items: [
