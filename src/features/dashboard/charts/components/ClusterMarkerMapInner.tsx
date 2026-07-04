@@ -6,6 +6,7 @@ import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import 'leaflet.markercluster';
 import React, { useEffect, useMemo, useRef } from 'react';
+import { formatNumber } from '@/utils';
 
 import { downsampleClusterMapPoints } from '../utils/downsampleMapPoints';
 import { areMapPointChartPropsEqual } from '../utils/mapChartMemo';
@@ -39,7 +40,7 @@ function colorForValue(value: number, max: number): string {
 /** Creates a circular div icon styled like the reference screenshots */
 function makeCircleIcon(value: number, max: number): L.DivIcon {
   const color = colorForValue(value, max);
-  const label = value >= 1000 ? `${(value / 1000).toFixed(1)}K` : String(value);
+  const label = formatNumber(value);
   return L.divIcon({
     html: `
       <div style="
