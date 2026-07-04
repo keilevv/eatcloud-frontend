@@ -1,181 +1,189 @@
 # EatCloud Frontend
 
-Web application for the EatCloud food donation analytics platform. Built with Next.js App Router and TypeScript, consuming the shared REST API used by the mobile application.
+Aplicación web para la plataforma de analytics de donación de alimentos EatCloud. Construida con Next.js App Router y TypeScript, consume la API REST compartida utilizada por la aplicación móvil.
 
-## Technology Stack
+## Stack Tecnológico
 
 - **Framework:** Next.js 16 (App Router)
-- **Language:** TypeScript (strict mode)
-- **Styling:** Tailwind CSS v4
-- **UI Components:** Shadcn/UI + Radix UI
-- **Data Fetching:** TanStack Query
-- **HTTP Client:** Axios
-- **Forms:** React Hook Form + Zod
-- **Icons:** Lucide React
-- **Theming:** next-themes
-- **Dates:** date-fns
-- **Package Manager:** pnpm
+- **Lenguaje:** TypeScript (modo estricto)
+- **Estilos:** Tailwind CSS v4
+- **Componentes UI:** Shadcn/UI + Radix UI
+- **Obtención de datos:** TanStack Query
+- **Cliente HTTP:** Axios
+- **Formularios:** React Hook Form + Zod
+- **Iconos:** Lucide React
+- **Temas:** next-themes
+- **Fechas:** date-fns
+- **Gestor de paquetes:** npm
 
-## Folder Structure
+## Estructura del Proyecto
 
 ```
 src/
 ├── app/                 # Next.js App Router (layout, error, loading)
-├── assets/              # Static assets
+├── assets/              # Assets estáticos
 ├── components/
-│   ├── ui/              # Shadcn UI components
-│   ├── common/          # Shared UI (ThemeToggle, etc.)
+│   ├── ui/              # Componentes Shadcn UI
+│   ├── common/          # UI compartida (ThemeToggle, etc.)
 │   ├── layout/          # PageContainer, PageHeader, layouts
-│   └── feedback/        # Loading, error, empty states
-├── config/              # Environment configuration
-├── constants/           # Routes, API endpoints, theme, chart colors
+│   └── feedback/        # Estados de carga, error, vacío
+├── config/              # Configuración de entorno
+├── constants/           # Rutas, endpoints de API, tema, colores de gráficos
 ├── features/
-│   ├── auth/            # Authentication feature (future)
-│   ├── dashboard/       # Dashboard feature (future)
-│   ├── analytics/       # Analytics feature (future)
-│   ├── maps/            # Maps feature (future)
-│   └── beneficiaries/   # Beneficiaries feature (future)
-├── hooks/               # Custom React hooks
-├── layouts/             # Layout modules
-├── lib/                 # Shared utilities (cn)
-├── providers/           # App providers (Query, Theme, Toast)
-├── schemas/             # Zod validation schemas
+│   ├── auth/            # Funcionalidad de autenticación
+│   ├── dashboard/       # Funcionalidad de dashboard
+│   ├── analytics/       # Funcionalidad de analytics
+│   ├── maps/            # Funcionalidad de mapas
+│   └── beneficiaries/   # Funcionalidad de beneficiarios
+├── hooks/               # Hooks personalizados de React
+├── layouts/             # Módulos de layout
+├── lib/                 # Utilidades compartidas (cn)
+├── providers/           # Proveedores de la app (Query, Theme, Toast)
+├── schemas/             # Esquemas de validación Zod
 ├── services/
-│   ├── api/             # Axios client configuration
-│   └── repositories/    # API repositories (future)
-├── styles/              # Global CSS
-├── types/               # Shared TypeScript types
-└── utils/               # Formatting and helper functions
+│   ├── api/             # Configuración del cliente Axios
+│   └── repositories/    # Repositorios de API
+├── styles/              # CSS global
+├── types/               # Tipos compartidos de TypeScript
+└── utils/               # Funciones de formato y ayuda
 ```
 
-## Installation
+## Instalación
 
 ```bash
 cd eatcloud-frontend
-pnpm install
+npm install
 ```
 
-## Environment Variables
+## Variables de Entorno
 
-Copy the template and configure your values:
+Copia la plantilla y configura tus valores:
 
 ```bash
 cp .env.example .env.local
 ```
 
-| Variable | Description |
-| -------- | ----------- |
-| `NEXT_PUBLIC_API_URL` | Backend API base URL |
-| `NEXT_PUBLIC_APP_NAME` | Application display name |
-| `NEXT_PUBLIC_ENV` | Environment (`development`, `production`) |
+| Variable               | Descripción                           |
+| ---------------------- | ------------------------------------- |
+| `NEXT_PUBLIC_API_URL`  | URL base de la API del backend        |
+| `NEXT_PUBLIC_APP_NAME` | Nombre mostrado de la aplicación      |
+| `NEXT_PUBLIC_ENV`      | Entorno (`development`, `production`) |
 
-## Running Locally
+## Ejecución Local
 
 ```bash
-pnpm dev
+npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+Abrir [http://localhost:3000](http://localhost:3000).
 
-## Available Scripts
+## Scripts Disponibles
 
-| Script | Description |
-| ------ | ----------- |
-| `pnpm dev` | Start development server |
-| `pnpm build` | Create production build |
-| `pnpm start` | Run production server |
-| `pnpm lint` | Run ESLint |
-| `pnpm lint:fix` | Run ESLint with auto-fix |
-| `pnpm format` | Format code with Prettier |
-| `pnpm format:check` | Check formatting |
+| Script                 | Descripción                              |
+| ---------------------- | ---------------------------------------- |
+| `npm run dev`          | Inicia servidor de desarrollo            |
+| `npm run build`        | Crea build de producción                 |
+| `npm start`            | Ejecuta servidor de producción           |
+| `npm run lint`         | Ejecuta ESLint                           |
+| `npm run lint:fix`     | Ejecuta ESLint con corrección automática |
+| `npm run format`       | Formatea código con Prettier             |
+| `npm run format:check` | Verifica formato                         |
 
-## Architecture
+## Despliegue en Vercel
 
-The frontend follows a feature-based architecture designed for reuse with the React Native mobile app:
+El frontend incluye un `vercel.json` con Next.js como framework.
+
+1. Sube el repositorio a GitHub e importa el directorio `eatcloud-frontend` en Vercel.
+2. Vercel detecta Next.js automáticamente — no se necesita configuración adicional.
+3. En el dashboard de Vercel, agrega las siguientes **Variables de Entorno**:
+
+| Variable               | Valor                                                                      |
+| ---------------------- | -------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_API_URL`  | URL del backend desplegado (ej. `https://eatcloud-backend.vercel.app/api`) |
+| `NEXT_PUBLIC_APP_NAME` | `EatCloud`                                                                 |
+| `NEXT_PUBLIC_ENV`      | `production`                                                               |
+
+4. Desplegar — cada push a la rama de producción dispara un nuevo build.
+
+## Arquitectura
+
+El frontend sigue una arquitectura basada en funcionalidades (features) diseñada para reutilización con la app móvil React Native:
 
 ```
 pages → features → services/repositories → API
 ```
 
-- **Pages** orchestrate features — no business logic in page components
-- **Features** contain components, hooks, types, and services per domain
-- **Services** handle HTTP communication via the configured Axios client
-- **Types, constants, and utils** are shared and generic
-- **Providers** wrap the app with React Query, theme, and toast support
+- **Pages** orquestan funcionalidades — sin lógica de negocio en componentes de página
+- **Features** contienen componentes, hooks, tipos y servicios por dominio
+- **Services** manejan la comunicación HTTP mediante el cliente Axios configurado
+- **Types, constants y utils** son compartidos y genéricos
+- **Providers** envuelven la app con React Query, tema y soporte de toasts
 
-Business logic and data transformation live outside UI components, enabling shared patterns with the mobile codebase.
+La lógica de negocio y transformación de datos viven fuera de los componentes UI, permitiendo patrones compartidos con el código base móvil.
 
-## Development Workflow
+## Flujo de Desarrollo
 
-1. Create a feature branch from `main`.
-2. Implement features inside `src/features/<feature>/`.
-3. Use path aliases (`@/components`, `@/features`, etc.) — avoid deep relative imports.
-4. Run linting and formatting before committing:
+1. Crea una rama de funcionalidad desde `main`.
+2. Implementa funcionalidades dentro de `src/features/<feature>/`.
+3. Usa alias de ruta (`@/components`, `@/features`, etc.) — evita imports relativos profundos.
+4. Ejecuta linting y formato antes de commitear:
 
    ```bash
-   pnpm lint:fix
-   pnpm format
+   npm run lint:fix
+   npm run format
    ```
 
-5. Husky runs ESLint and Prettier on staged files via lint-staged during pre-commit.
+## Arquitectura del Dashboard
 
-## Future Modules
+El dashboard está construido usando un motor de composición basado en configuración.
 
-The following modules will be implemented in upcoming prompts:
+### Shell de la Aplicación
 
-- Authentication (login, JWT, protected routes) - **Implemented**
-- Dashboard layout and navigation
-- Analytics charts and KPI cards
-- Interactive maps
-- Beneficiary management views
-- API integration with TanStack Query hooks
+- `DashboardLayout` proporciona el sidebar responsivo, encabezado y área de contenido principal.
+- `DashboardSidebar` gestiona la navegación.
+- `DashboardHeader` integra acciones globales como el menú de usuario.
 
-## Dashboard Architecture
+### Sistema de Widgets
 
-The dashboard is built using a configuration-driven composition engine.
+- El dashboard no usa JSX hardcodeado para métricas.
+- `DashboardWidget` actúa como contenedor base proporcionando bordes, padding y estados de skeleton.
+- Componentes reutilizables como `KpiCard`, `ChartCard` y `MapCard` aseguran una apariencia uniforme.
+- `EmptyState` y `ErrorState` son estándar en todos los widgets.
 
-### Application Shell
-- `DashboardLayout` provides the responsive sidebar, header, and main content area.
-- `DashboardSidebar` manages navigation.
-- `DashboardHeader` integrates global actions like the user menu.
+### Sistema de Cuadrícula
 
-### Widget System
-- The dashboard does not use hardcoded JSX for metrics.
-- `DashboardWidget` acts as the base container providing borders, padding, and skeleton states.
-- Reusable components like `KpiCard`, `ChartCard`, and `MapCard` ensure uniform appearance.
-- `EmptyState` and `ErrorState` are standard across all widgets.
+- `ResponsiveGrid` gestiona automáticamente las columnas para escritorio, tablet y móvil sin requerir anchos fijos.
 
-### Grid System
-- `ResponsiveGrid` automatically manages columns for desktop, tablet, and mobile displays without requiring fixed widths.
+### Configuración del Dashboard
 
-### Dashboard Configuration
-- The entire dashboard layout is managed via `config/dashboard.config.ts`.
-- Future prompts only need to update this configuration array to render new charts, KPIs, or maps dynamically.
+- Todo el layout del dashboard se gestiona mediante `config/dashboard.config.ts`.
+- Próximas iteraciones solo necesitan actualizar este array de configuración para renderizar nuevos gráficos, KPIs o mapas dinámicamente.
 
-## Chart Architecture
+## Arquitectura de Gráficos
 
-The dashboard implements a highly reusable charting infrastructure using Victory, separated into layers:
+El dashboard implementa una infraestructura de gráficos altamente reutilizable usando Victory, separada en capas:
 
-1. **DTOs & Adapters**: `DonorChartAdapter`, `DonationPointAdapter`, etc. transform raw backend responses into a standard `ChartSeries` and `ChartPoint` dataset without mutating business logic.
-2. **Configuration & Utils**: Chart configurations (`ChartConfig`), theming (`chartTheme.ts`, `victoryTheme.ts`), and formatters (`formatAxis`, `formatTooltip`) dictate aesthetics and labels uniformly across charts.
-3. **Generic Wrappers**: `VictoryBarWrapper`, `VictoryScatterWrapper`, and `VictoryChartWrapper` handle all the proprietary Victory configurations securely.
-4. **Presentation Components**: `BarChart`, `HorizontalBarChart`, `ScatterChart`, and `ChartContainer` assemble the layouts alongside loading, empty, and error states.
+1. **DTOs & Adapters**: `DonorChartAdapter`, `DonationPointAdapter`, etc. transforman respuestas crudas del backend en datasets estándar `ChartSeries` y `ChartPoint` sin mutar la lógica de negocio.
+2. **Configuración & Utils**: Configuraciones de gráficos (`ChartConfig`), theming (`chartTheme.ts`, `victoryTheme.ts`) y formateadores (`formatAxis`, `formatTooltip`) dictan la estética y etiquetas de forma uniforme.
+3. **Wrappers Genéricos**: `VictoryBarWrapper`, `VictoryScatterWrapper` y `VictoryChartWrapper` manejan todas las configuraciones propietarias de Victory de forma segura.
+4. **Componentes de Presentación**: `BarChart`, `HorizontalBarChart`, `ScatterChart` y `ChartContainer` ensamblan los layouts junto con estados de carga, vacío y error.
 
-This ensures that UI logic is thoroughly abstracted, providing deep code reuse—especially ideal for porting configurations and formatters to the future React Native app.
+Esto asegura que la lógica UI está completamente abstraída, proporcionando una reutilización profunda de código — ideal para portar configuraciones y formateadores a la futura app React Native.
 
-### Chart Folder Structure
+### Estructura de Carpetas de Gráficos
+
 ```text
 src/features/dashboard/charts/
-├── adapters/      # Data transformers (DTO -> ChartSeries)
-├── components/    # Reusable chart components & states
-├── config/        # Margins, typography, theme tokens
-├── hooks/         # Responsive layout utilities
-├── styles/        # Victory theme definitions
-├── types/         # Core interfaces
-├── utils/         # Axes, tooltip formatting & sorting
-└── wrappers/      # Victory base abstraction layer
+├── adapters/      # Transformadores de datos (DTO -> ChartSeries)
+├── components/    # Componentes de gráficos reutilizables y estados
+├── config/        # Márgenes, tipografía, tokens de tema
+├── hooks/         # Utilidades de layout responsivo
+├── styles/        # Definiciones de tema de Victory
+├── types/         # Interfaces principales
+├── utils/         # Formateo de ejes, tooltips y ordenamiento
+└── wrappers/      # Capa de abstracción base de Victory
 ```
 
-## License
+## Licencia
 
-Private
+Privado
