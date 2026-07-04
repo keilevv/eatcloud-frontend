@@ -107,6 +107,11 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({
     try {
       await authService.logout();
     } finally {
+      if (typeof window !== 'undefined' && (window as any).ReactNativeWebView) {
+        (window as any).ReactNativeWebView.postMessage(
+          JSON.stringify({ type: 'LOGOUT' }),
+        );
+      }
       authStorage.removeToken();
       setState({
         user: null,
