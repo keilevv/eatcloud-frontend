@@ -3,6 +3,8 @@
 import { useRouter } from 'next/navigation';
 import React, { useCallback, useEffect, useState } from 'react';
 
+import type { NormalizedApiError } from '@/types';
+
 import { AuthContext } from '../context/AuthContext';
 import { authService } from '../services/auth.service';
 import { authStorage } from '../services/auth.storage';
@@ -93,10 +95,11 @@ export const SessionProvider: React.FC<SessionProviderProps> = ({
         error: null,
       });
     } catch (error) {
+      const apiError = error as NormalizedApiError;
       setState((prev) => ({
         ...prev,
         isLoading: false,
-        error: error instanceof Error ? error.message : 'Login failed',
+        error: apiError?.message || 'Login failed',
       }));
       throw error;
     }

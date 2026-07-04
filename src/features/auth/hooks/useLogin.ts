@@ -1,5 +1,8 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { toast } from 'sonner';
+
+import type { NormalizedApiError } from '@/types';
 
 import { LoginCredentials } from '../types/auth.types';
 
@@ -19,9 +22,13 @@ export const useLogin = () => {
     try {
       await login(credentials);
       setSuccess(true);
+      toast.success('Login successful');
       router.push('/dashboard');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+      const apiError = err as NormalizedApiError;
+      const message = apiError?.message || 'Login failed';
+      setError(message);
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }

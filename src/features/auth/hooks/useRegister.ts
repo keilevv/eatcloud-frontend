@@ -1,5 +1,8 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { toast } from 'sonner';
+
+import type { NormalizedApiError } from '@/types';
 
 import { authService } from '../services/auth.service';
 import { RegisterCredentials } from '../types/auth.types';
@@ -17,9 +20,13 @@ export const useRegister = () => {
     try {
       await authService.register(credentials);
       setSuccess(true);
+      toast.success('User registered successfully');
       router.push('/login');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Registration failed');
+      const apiError = err as NormalizedApiError;
+      const message = apiError?.message || 'Registration failed';
+      setError(message);
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
